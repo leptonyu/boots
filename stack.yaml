@@ -1,0 +1,10 @@
+resolver: nightly-2019-07-25
+
+packages:
+- .
+
+extra-deps:
+- salak-0.3.1
+- salak-yaml-0.3.1
+
+pvp-bounds: both

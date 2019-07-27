@@ -1,0 +1,72 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: b40464bd70170fb6b6016919f2b0b124ac63baed4700bcf9f5f4e24aebba6609
+
+name:           boots
+version:        0
+synopsis:       Boot application by using plugins.
+description:    Boot application.
+category:       Library
+homepage:       https://github.com/leptonyu/boots#readme
+author:         Daniel YU
+maintainer:     leptonyu@gmail.com
+copyright:      2019 Daniel YU
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      Boots
+      Boots.Plugin
+      Boots.Plugin.Simple
+      Boots.Plugin.Salak
+      Boots.Plugin.Logger
+  other-modules:
+      Boots.Internal
+      Boots.Internal.App
+      Boots.Internal.Plugin
+  hs-source-dirs:
+      src
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts
+  build-depends:
+      base >=4.10 && <5
+    , data-default
+    , exceptions
+    , fast-logger
+    , microlens
+    , monad-logger
+    , mtl
+    , salak
+    , salak-yaml
+    , text
+    , unliftio-core
+  default-language: Haskell2010
+
+executable boots-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_boots
+  hs-source-dirs:
+      main
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts
+  build-depends:
+      base >=4.10 && <5
+    , boots
+    , data-default
+    , exceptions
+    , fast-logger
+    , microlens
+    , monad-logger
+    , mtl
+    , salak
+    , salak-yaml
+    , text
+    , unliftio-core
+  default-language: Haskell2010
