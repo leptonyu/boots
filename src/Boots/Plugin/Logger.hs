@@ -22,6 +22,7 @@ module Boots.Plugin.Logger(
   , logOther
   ) where
 
+import Data.Monoid((<>))
 import           Boots.Internal
 import           Boots.Plugin.Salak
 import           Control.Monad
