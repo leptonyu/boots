@@ -4,12 +4,12 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9d909139984e898594edebe27537be26fe6009de8ca51c1cb79b371563d54839
+-- hash: 931bdd3bd93a5ace2de62bd1c883a2be5d112e0422e38e2b48e3c5a78cd0d3fc
 
 name:           boots
-version:        0.0.1
-synopsis:       Boot application by using plugins.
-description:    Boot application.
+version:        0.0.2
+synopsis:       Boot application by plugins
+description:    Boot application by using plugins.
 category:       Library
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU

@@ -1,5 +1,5 @@
 name:                boots
-version:             0.0.1
+version:             0.0.2
 synopsis:            Boot application by plugins
 description:         Boot application by using plugins.
 homepage:            https://github.com/leptonyu/boots#readme
