@@ -31,6 +31,8 @@ default-extensions:
   - OverloadedStrings
   - RecordWildCards
   - FlexibleContexts
+  - RankNTypes
+  - ScopedTypeVariables
 
 library:
   source-dirs: src

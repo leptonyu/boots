@@ -5,7 +5,7 @@ import           Control.Concurrent
 import           Control.Monad
 
 main :: IO ()
-main = booting (pluginSimple "application") go
+main = bootApp (pluginSimple "application") go
   where
     go = forever $ do
       logInfo "Hello, world!"

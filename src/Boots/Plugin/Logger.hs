@@ -22,13 +22,13 @@ module Boots.Plugin.Logger(
   , logOther
   ) where
 
-import Data.Monoid((<>))
 import           Boots.Internal
 import           Boots.Plugin.Salak
 import           Control.Monad
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
 import           Data.Default
+import           Data.Monoid                    ((<>))
 import           Data.Text                      (Text, toLower, unpack)
 import           Data.Word
 import           Lens.Micro

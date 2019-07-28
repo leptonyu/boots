@@ -9,7 +9,7 @@ Boot applications by using plugins.
 
 ```Haskell
 main :: IO ()
-main = booting (pluginSimple "application") go
+main = bootApp (pluginSimple "application") go
   where
     go = forever $ do
       user <- require "user"

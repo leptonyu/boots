@@ -10,6 +10,7 @@
 --
 module Boots.Internal.App(
     AppT
+  , App
   , runAppT
   , liftIO
   , ask
@@ -17,7 +18,6 @@ module Boots.Internal.App(
   , throwM
   ) where
 
-import           Boots.Internal.Plugin
 import           Control.Monad.Catch
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Reader
@@ -25,6 +25,9 @@ import           Control.Monad.Reader
 -- | Application monad transformation.
 newtype AppT cxt m a = AppT { unAppT :: ReaderT cxt m a }
   deriving (Functor, Applicative, Monad, MonadTrans, MonadReader cxt, MonadIO, MonadThrow, MonadCatch, MonadMask)
+
+-- | Simple IO monad.
+type App cxt = AppT cxt IO
 
 -- | Run application monad transformation.
 runAppT :: cxt -> AppT cxt m a -> m a

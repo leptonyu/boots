@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 931bdd3bd93a5ace2de62bd1c883a2be5d112e0422e38e2b48e3c5a78cd0d3fc
+-- hash: 7c50cba1e7b6614dc5ee850964d23ce6e91dc8a076d101c06fcb85b275e8d541
 
 name:           boots
 version:        0.0.2
@@ -34,7 +34,7 @@ library
       Boots.Internal.Plugin
   hs-source-dirs:
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
   build-depends:
       base >=4.10 && <5
     , data-default
@@ -55,7 +55,7 @@ executable boots-exe
       Paths_boots
   hs-source-dirs:
       main
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
   build-depends:
       base >=4.10 && <5
     , boots
@@ -87,7 +87,7 @@ test-suite spec
   hs-source-dirs:
       test
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
   build-depends:
       base >=4.10 && <5
     , data-default

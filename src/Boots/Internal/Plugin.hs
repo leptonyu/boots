@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
 -- |
 -- Module:      Boots.Internal.Plugin
 -- Copyright:   2019 Daniel YU
@@ -16,6 +14,7 @@ module Boots.Internal.Plugin(
   , promote
   , withPlugin
   , mapPlugin
+  , isoPlugin
   , bracketP
   ) where
 
@@ -50,10 +49,15 @@ promote i pimu = Plugin $ lift $ ContT (runPlugin i pimu)
 withPlugin :: (i -> j) -> Plugin j m u -> Plugin i m u
 withPlugin f = Plugin . withReaderT f . unPlugin
 
+-- | Transform a plugin with monad @n@ to a plugin with monad @m@.
+isoPlugin :: (m () -> n ()) -> (n () -> m ()) -> Plugin i n u -> Plugin i m u
+isoPlugin f g = Plugin . mapReaderT go . unPlugin
+  where
+    go (ContT fnc) = ContT $ \mc -> g $ fnc (f . mc)
+
 -- | Apply a function to transform the result of a continuation-passing computation.
 mapPlugin :: (m () -> m ()) -> Plugin i m u -> Plugin i m u
 mapPlugin f = Plugin . mapReaderT (mapContT f) . unPlugin
-
 
 -- | Create bracket style plugin, used for manage resources, which need to open and close.
 --
@@ -65,7 +69,7 @@ mapPlugin f = Plugin . mapReaderT (mapContT f) . unPlugin
 -- using
 -- close
 bracketP
-  :: MonadCatch m
+  :: forall m i u. MonadCatch m
   => m u          -- ^ Open resource.
   -> (u -> m ())  -- ^ Close resource.
   -> Plugin i m u -- ^ Resource plugin.
@@ -73,8 +77,8 @@ bracketP op cl = Plugin $ lift $ withContT go (lift op)
   where
     {-# INLINE go #-}
     go f u = do
-      v <- try (f u)
-      cl u
+      v <- try $ f u
+      _ <- try $ cl u :: m (Either SomeException ())
       case v of
         Left  e -> throwM (e :: SomeException)
         Right x -> return x
