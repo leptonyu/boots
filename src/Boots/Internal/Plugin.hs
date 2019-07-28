@@ -9,7 +9,8 @@
 -- This module defines a generic application plugin used when booting application.
 --
 module Boots.Internal.Plugin(
-    Plugin
+    boot
+  , Plugin
   , runPlugin
   , promote
   , withPlugin
@@ -29,6 +30,10 @@ newtype Plugin i m u = Plugin { unPlugin :: ReaderT i (ContT () m) u }
 -- | Run plugin in given context @i@.
 runPlugin :: i -> Plugin i m u -> (u -> m ()) -> m ()
 runPlugin i pma = runContT (runReaderT (unPlugin pma) i)
+
+-- | Run application only in plugin.
+boot :: Monad m => Plugin () m (m ()) -> m ()
+boot plugin = runPlugin () plugin id
 
 instance MonadTrans (Plugin i) where
   lift = Plugin . lift . lift

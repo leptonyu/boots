@@ -6,12 +6,11 @@
 -- Stability:   experimental
 -- Portability: portable
 --
--- Boot cores.
+-- Boot plugin and application.
 --
 module Boots.Internal(
   -- * Plugin
-    boot
-  , module Boots.Internal.Plugin
+    module Boots.Internal.Plugin
   -- * Application
   , bootApp
   , module Boots.Internal.App
@@ -19,10 +18,6 @@ module Boots.Internal(
 
 import           Boots.Internal.App
 import           Boots.Internal.Plugin
-
--- | Run application only in plugin.
-boot :: Monad m => Plugin () m (m ()) -> m ()
-boot plugin = runPlugin () plugin id
 
 -- | Run application in context with the help of plugin. Context @cxt@ can't escape from @m@.
 --  If you want to define your own `AppT` then please use 'boot' or 'runPlugin'.

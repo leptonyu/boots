@@ -1,5 +1,5 @@
 name:                boots
-version:             0.0.2
+version:             0.0.3
 synopsis:            Boot application by plugins
 description:         Boot application by using plugins.
 homepage:            https://github.com/leptonyu/boots#readme
@@ -40,6 +40,7 @@ library:
     - Boots
 
     - Boots.Plugin
+
     - Boots.Plugin.Simple
     - Boots.Plugin.Salak
     - Boots.Plugin.Logger

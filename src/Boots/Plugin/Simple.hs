@@ -12,6 +12,8 @@ module Boots.Plugin.Simple(
     Simple(..)
   , HasSimple(..)
   , pluginSimple
+  , module Boots.Plugin.Salak
+  , module Boots.Plugin.Logger
   ) where
 
 import           Boots.Internal

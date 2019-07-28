@@ -6,17 +6,10 @@
 -- Stability:   experimental
 -- Portability: portable
 --
--- Boot plugins.
+-- Boot plugin.
 --
 module Boots.Plugin(
-  -- * Simple Plugin
-    module Boots.Plugin.Simple
-  -- * Configuration Plugin
-  , module Boots.Plugin.Salak
-  -- * Logger Plugin
-  , module Boots.Plugin.Logger
+    module Boots.Internal.Plugin
   ) where
 
-import           Boots.Plugin.Logger
-import           Boots.Plugin.Salak
-import           Boots.Plugin.Simple
+import           Boots.Internal.Plugin
