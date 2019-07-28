@@ -7,12 +7,20 @@
 
 Boot applications by using plugins.
 
+### Motivation
+
+Simplify to create an application in Haskell.
+
+When we decide to create an application using Haskell. We may need using configurations, loggers as basic functions. If this application needs storages, caches, etc., then we have to weaving the management of connection of these facilities into the application. Connections need to be created before and be destroyed after using them. There is a common strategy to manage connections, that is using `Control.Monad.Cont`. Then we can encapsulate the management of connections separately. For example, we can write a database plugin `Plugin cxt m DBConnection`, which can manage the database connections in monad `m` with context `cxt`. Context `cxt` may be requested for configurations or logging functions. When all the components of application are encapsulated by plugins, then building an application will be simplified.
+
+### Have a Try
+
 ```Haskell
 main :: IO ()
 main = bootApp (pluginSimple "application") go
   where
     go = forever $ do
-      user <- require "user"
-      logInfo $ "Hello, " <> user <> "!"
+      user <- require "user"              -- Request for configuration.
+      logInfo $ "Hello, " <> user <> "!"  -- Request for logging.
       liftIO $ threadDelay 1000000
 ```
