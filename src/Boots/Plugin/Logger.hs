@@ -53,6 +53,12 @@ instance (MonadIO m, HasLogger cxt) => MonadLogger (AppT cxt m) where
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
 
+instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (Plugin cxt m) where
+  askLoggerIO = logfunc <$> asks (view askLogger)
+
+instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (AppT cxt m) where
+  askLoggerIO = logfunc <$> asks (view askLogger)
+
 instance Monad m => FromProp m LogLevel where
   fromProp = readEnum (fromEnumProp.toLower)
     where
