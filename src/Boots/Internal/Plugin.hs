@@ -13,10 +13,12 @@ module Boots.Internal.Plugin(
   , Plugin
   , runPlugin
   , promote
+  , combine
   , withPlugin
   , mapPlugin
   , isoPlugin
   , bracketP
+  , wrapP
   ) where
 
 import           Control.Monad.Catch
@@ -50,6 +52,10 @@ instance Monad m => MonadCont (Plugin i m) where
 promote :: i -> Plugin i m u -> Plugin x m u
 promote i pimu = Plugin $ lift $ ContT (runPlugin i pimu)
 
+-- | Combines plugins into one.
+combine :: [Plugin i m i] -> Plugin i m i
+combine fs = foldl (\b a -> b >>= \i -> promote i a) ask fs
+
 -- | Convert a plugin into another.
 withPlugin :: (i -> j) -> Plugin j m u -> Plugin i m u
 withPlugin f = Plugin . withReaderT f . unPlugin
@@ -63,6 +69,11 @@ isoPlugin f g = Plugin . mapReaderT go . unPlugin
 -- | Apply a function to transform the result of a continuation-passing computation.
 mapPlugin :: (m () -> m ()) -> Plugin i m u -> Plugin i m u
 mapPlugin f = Plugin . mapReaderT (mapContT f) . unPlugin
+
+
+-- | Warp plugin.
+wrapP :: ((u -> m ()) -> m ()) -> Plugin i m u
+wrapP = Plugin . lift . ContT
 
 -- | Create bracket style plugin, used for manage resources, which need to open and close.
 --

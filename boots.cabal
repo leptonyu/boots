@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7c50cba1e7b6614dc5ee850964d23ce6e91dc8a076d101c06fcb85b275e8d541
+-- hash: d267472d82507130db8d6c159f5d45d694137246b896194b65521c31e4f7545a
 
 name:           boots
-version:        0.0.2
+version:        0.0.3
 synopsis:       Boot application by plugins
 description:    Boot application by using plugins.
 category:       Library
