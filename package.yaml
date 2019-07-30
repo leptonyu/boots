@@ -60,9 +60,9 @@ tests:
     dependencies:
       - hspec == 2.*
 
-executables:
-  boots-exe:
-    source-dirs:      main
-    main:             Main.hs
-    dependencies:
-      - boots
+# executables:
+#   boots-exe:
+#     source-dirs:      main
+#     main:             Main.hs
+#     dependencies:
+#       - boots
