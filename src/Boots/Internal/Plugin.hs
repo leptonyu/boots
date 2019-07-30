@@ -54,7 +54,7 @@ promote i pimu = Plugin $ lift $ ContT (runPlugin i pimu)
 
 -- | Combines plugins into one.
 combine :: [Plugin i m i] -> Plugin i m i
-combine fs = foldl (\b a -> b >>= \i -> promote i a) ask fs
+combine = foldl (\b a -> b >>= \i -> promote i a) ask
 
 -- | Convert a plugin into another.
 withPlugin :: (i -> j) -> Plugin j m u -> Plugin i m u
