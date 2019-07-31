@@ -26,9 +26,9 @@
 --
 -- * Have a Try
 --
--- >>> booting (pluginSimple "application") (logInfo "hello")
+-- >>> bootApp (pluginSimple "application") (logInfo "hello")
 -- 2019-07-27 19:35:30  INFO [application] Ghci1 - hello
--- >>> booting (pluginSimple "application") (require "user" >>= logInfo)
+-- >>> bootApp (pluginSimple "application") (require "user" >>= logInfo)
 -- 2019-07-27 19:37:45  INFO [application] Ghci2 - daniel
 --
 -- Main

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d267472d82507130db8d6c159f5d45d694137246b896194b65521c31e4f7545a
+-- hash: 794b82d7bc2dd0ead2372c9200a7fd84ec76e73cc17bf2070c7a5e0bfc24a6c4
 
 name:           boots
 version:        0.0.3
@@ -37,28 +37,6 @@ library
   default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
   build-depends:
       base >=4.10 && <5
-    , data-default
-    , exceptions
-    , fast-logger
-    , microlens
-    , monad-logger
-    , mtl
-    , salak
-    , salak-yaml
-    , text
-    , unliftio-core
-  default-language: Haskell2010
-
-executable boots-exe
-  main-is: Main.hs
-  other-modules:
-      Paths_boots
-  hs-source-dirs:
-      main
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
-  build-depends:
-      base >=4.10 && <5
-    , boots
     , data-default
     , exceptions
     , fast-logger

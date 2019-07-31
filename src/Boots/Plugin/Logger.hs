@@ -98,6 +98,7 @@ instance MonadIO m => FromProp m LogConfig where
 data LogFunc = LogFunc
   { logfunc :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
+  , logLvl  :: IO LogLevel
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -108,7 +109,7 @@ newLogger name LogConfig{..} = do
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
   (l,close) <- newTimedFastLogger tc ft
-  return (LogFunc (toLogger ln l) close)
+  return (LogFunc (toLogger ln l) close level)
   where
     toLogger xn f Loc{..} _ ll s = do
       lc <- level

@@ -23,16 +23,16 @@ import           Salak
 import           Salak.Yaml
 
 -- | Environment providing a configuration parser.
-class HasSalak cxt where
-  askSourcePack :: Lens' cxt SourcePack
+class HasSalak env where
+  askSourcePack :: Lens' env SourcePack
 
 instance HasSalak SourcePack where
   askSourcePack = id
 
-instance HasSalak cxt => MonadSalak (Plugin cxt m) where
+instance HasSalak env => MonadSalak (Plugin env m) where
   askSalak = asks (view askSourcePack)
 
-instance (Monad m, HasSalak cxt) => MonadSalak (AppT cxt m) where
+instance (Monad m, HasSalak env) => MonadSalak (AppT env m) where
   askSalak = asks (view askSourcePack)
 
 -- | Plugin used for parse properties.
