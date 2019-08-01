@@ -13,6 +13,7 @@ module Boots.Internal.Plugin(
   , Plugin
   , runPlugin
   , promote
+  , union
   , combine
   , withPlugin
   , mapPlugin
@@ -54,7 +55,10 @@ promote i pimu = Plugin $ lift $ ContT (runPlugin i pimu)
 
 -- | Combines plugins into one.
 combine :: [Plugin i m i] -> Plugin i m i
-combine = foldl (\b a -> b >>= \i -> promote i a) ask
+combine = foldl union ask
+
+union :: Plugin i m j -> Plugin j m k -> Plugin i m k
+union pij pjk = pij >>= (`promote` pjk)
 
 -- | Convert a plugin into another.
 withPlugin :: (i -> j) -> Plugin j m u -> Plugin i m u
@@ -69,7 +73,6 @@ isoPlugin f g = Plugin . mapReaderT go . unPlugin
 -- | Apply a function to transform the result of a continuation-passing computation.
 mapPlugin :: (m () -> m ()) -> Plugin i m u -> Plugin i m u
 mapPlugin f = Plugin . mapReaderT (mapContT f) . unPlugin
-
 
 -- | Warp plugin.
 wrapP :: ((u -> m ()) -> m ()) -> Plugin i m u
@@ -98,3 +101,8 @@ bracketP op cl = Plugin $ lift $ withContT go (lift op)
       case v of
         Left  e -> throwM (e :: SomeException)
         Right x -> return x
+
+
+
+
+
