@@ -39,6 +39,8 @@ import           System.Log.FastLogger
 -- | Environment providing a logging function.
 class HasLogger cxt where
   askLogger :: Lens' cxt LogFunc
+  askLogLevel :: Lens' cxt (Writable LogLevel)
+  askLogLevel = askLogger . lens logLvl (\x y -> x { logLvl = y })
 
 instance HasLogger LogFunc where
   askLogger = id
@@ -110,10 +112,10 @@ newLogger name LogConfig{..} = do
         _      -> LogStdout $ fromIntegral bufferSize
   (l,close) <- newTimedFastLogger tc ft
   lvl       <- toWritable level
-  return (LogFunc (toLogger ln l) close lvl)
+  return (LogFunc (toLogger lvl ln l) close lvl)
   where
-    toLogger xn f Loc{..} _ ll s = do
-      lc <- level
+    toLogger lvl xn f Loc{..} _ ll s = do
+      lc <- getWritable lvl
       when (lc <= ll) $ f $ \t ->
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
