@@ -20,6 +20,7 @@ module Boots.Internal.Plugin(
   , isoPlugin
   , bracketP
   , wrapP
+  , delayP
   ) where
 
 import           Control.Monad.Catch
@@ -102,7 +103,8 @@ bracketP op cl = Plugin $ lift $ withContT go (lift op)
         Left  e -> throwM (e :: SomeException)
         Right x -> return x
 
-
-
+-- | Add a delayed action to plugin.
+delayP :: MonadCatch m => m () -> Plugin i m ()
+delayP ma = bracketP (return ()) (const ma)
 
 
