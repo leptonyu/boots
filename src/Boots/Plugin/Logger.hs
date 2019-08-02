@@ -78,11 +78,11 @@ toStr (LevelOther l) = toLogStr l
 
 -- | Logger config.
 data LogConfig = LogConfig
-  { bufferSize    :: Word16         -- ^ Logger buffer size.
-  , file          :: Maybe FilePath -- ^ Logger file path.
-  , maxSize       :: Word32         -- ^ Max logger file size.
-  , rotateHistory :: Word16         -- ^ Max number of logger files should be reserved.
-  , level         :: IO LogLevel    -- ^ Log level to show.
+  { bufferSize    :: !Word16         -- ^ Logger buffer size.
+  , file          :: !(Maybe FilePath) -- ^ Logger file path.
+  , maxSize       :: !Word32         -- ^ Max logger file size.
+  , rotateHistory :: !Word16         -- ^ Max number of logger files should be reserved.
+  , level         :: !(IO LogLevel)    -- ^ Log level to show.
   }
 instance Default LogConfig where
   def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo)
@@ -98,7 +98,7 @@ instance MonadIO m => FromProp m LogConfig where
 data LogFunc = LogFunc
   { logfunc :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
-  , logLvl  :: IO LogLevel
+  , logLvl  :: Writable LogLevel
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -109,7 +109,8 @@ newLogger name LogConfig{..} = do
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
   (l,close) <- newTimedFastLogger tc ft
-  return (LogFunc (toLogger ln l) close level)
+  lvl       <- toWritable level
+  return (LogFunc (toLogger ln l) close lvl)
   where
     toLogger xn f Loc{..} _ ll s = do
       lc <- level
