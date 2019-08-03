@@ -27,6 +27,7 @@ import           Control.Monad.Catch
 import           Control.Monad.Cont
 import           Control.Monad.Reader
 import           Data.Monoid
+import           Data.Semigroup
 
 -- | Plugin generates component @u@ with the context of component @i@ running in monad @m@.
 newtype Plugin i m u = Plugin { unPlugin :: ReaderT i (ContT () m) u }
