@@ -14,18 +14,19 @@ module Boots.Internal.Plugin(
   , runPlugin
   , promote
   , union
-  , combine
   , withPlugin
   , mapPlugin
   , isoPlugin
   , bracketP
   , wrapP
   , delayP
+  , Monoid(..)
   ) where
 
 import           Control.Monad.Catch
 import           Control.Monad.Cont
 import           Control.Monad.Reader
+import           Data.Monoid
 
 -- | Plugin generates component @u@ with the context of component @i@ running in monad @m@.
 newtype Plugin i m u = Plugin { unPlugin :: ReaderT i (ContT () m) u }
@@ -50,13 +51,15 @@ instance Monad m => MonadCont (Plugin i m) where
     i <- ask
     Plugin . lift . ContT . runPlugin i $ callCC a
 
+instance Semigroup (Plugin i n i) where
+  (<>) = union
+
+instance Monoid (Plugin i n i) where
+  mempty = ask
+
 -- | Promote a plugin into another.
 promote :: i -> Plugin i m u -> Plugin x m u
 promote i pimu = Plugin $ lift $ ContT (runPlugin i pimu)
-
--- | Combines plugins into one.
-combine :: [Plugin i m i] -> Plugin i m i
-combine = foldl union ask
 
 union :: Plugin i m j -> Plugin j m k -> Plugin i m k
 union pij pjk = pij >>= (`promote` pjk)
