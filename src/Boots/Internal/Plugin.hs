@@ -28,7 +28,6 @@ import           Control.Monad.Catch
 import           Control.Monad.Cont
 import           Control.Monad.Reader
 #if __GLASGOW_HASKELL__ < 804
-import           Data.Monoid
 import           Data.Semigroup
 #endif
 
