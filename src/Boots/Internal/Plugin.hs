@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module:      Boots.Internal.Plugin
 -- Copyright:   2019 Daniel YU
@@ -26,8 +27,10 @@ module Boots.Internal.Plugin(
 import           Control.Monad.Catch
 import           Control.Monad.Cont
 import           Control.Monad.Reader
+#if __GLASGOW_HASKELL__ < 804
 import           Data.Monoid
 import           Data.Semigroup
+#endif
 
 -- | Plugin generates component @u@ with the context of component @i@ running in monad @m@.
 newtype Plugin i m u = Plugin { unPlugin :: ReaderT i (ContT () m) u }
@@ -57,6 +60,7 @@ instance Semigroup (Plugin i n i) where
 
 instance Monoid (Plugin i n i) where
   mempty = ask
+  mappend = union
 
 -- | Promote a plugin into another.
 promote :: i -> Plugin i m u -> Plugin x m u

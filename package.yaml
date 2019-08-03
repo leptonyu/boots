@@ -10,6 +10,7 @@ copyright:           2019 Daniel YU
 category:            Library
 extra-source-files:
 - README.md
+ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
 
 dependencies:
   - base >= 4.10 && < 5
