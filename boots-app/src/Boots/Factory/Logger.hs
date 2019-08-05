@@ -4,7 +4,13 @@ module Boots.Factory.Logger(
   , LogFunc
   , addTrace
   , buildLogger
+  -- ** Log Functions
   , MonadLogger(..)
+  , logInfo
+  , logDebug
+  , logError
+  , logWarn
+  , logOther
   ) where
 
 import           Boots.App.Internal
@@ -34,15 +40,15 @@ instance (MonadIO m, HasLogger env) => MonadLogger (Factory m env) where
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
 
-instance (MonadIO m, HasLogger cxt) => MonadLogger (AppT cxt m) where
+instance (MonadIO m, HasLogger env) => MonadLogger (AppT env m) where
   monadLoggerLog a b c d = do
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
 
-instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (Factory m cxt) where
+instance (MonadIO m, HasLogger env) => MonadLoggerIO (Factory m env) where
   askLoggerIO = logfunc <$> asks (view askLogger)
 
-instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (AppT cxt m) where
+instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
   askLoggerIO = logfunc <$> asks (view askLogger)
 
 instance Monad m => FromProp m LogLevel where

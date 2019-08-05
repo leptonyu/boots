@@ -1,4 +1,5 @@
 _common: !include "../common.yaml"
+version:             0.1.0.1
 name:                boots-app
 synopsis:            Startup factories using IoC monad
 description:         Provide basic factories base on boots.

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e0684debc4b94aaa16d3945dd27b66298c9427557ba4f9e86518d49b7e8cd9cf
+-- hash: 8ad93ce518ae7381e6f7a3cb479263bff3780f2ba69597735a9a4a578168a239
 
 name:           boots-app
-version:        0.1.1
+version:        0.1.0.1
 synopsis:       Startup factories using IoC monad
 description:    Provide basic factories base on boots.
 category:       Library, Application
