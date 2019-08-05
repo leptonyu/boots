@@ -11,7 +11,7 @@ import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Control.Concurrent.MVar
 import           Data.Maybe
-import           Data.String             (fromString)
+import           Data.String
 import           Data.Text               (Text)
 import           Data.Version            (Version)
 import           Data.Word
@@ -59,13 +59,13 @@ random64 ref = modifyMVar ref (return . go . nextWord64)
   where
     go (a,b) = (b,a)
 
-hex64 :: Word64 -> Text
+hex64 :: IsString a => Word64 -> a
 hex64 i = fromString $ let x = showHex i "" in replicate (16 - length x) '0' ++ x
 
-rand64 :: MonadIO m => MVar SMGen -> m Text
+rand64 :: (IsString a, MonadIO m) => MVar SMGen -> m a
 rand64 = liftIO . fmap hex64 . random64
 
-buildRandom :: (MonadIO m, HasApp env) => Factory m env Text
+buildRandom :: (IsString a, MonadIO m, HasApp env) => Factory m env a
 buildRandom = do
   AppEnv{..} <- asks (view askApp)
   offer $ rand64 randSeed
