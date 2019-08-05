@@ -1,5 +1,5 @@
 -- |
--- Module:      Boots.Internal.Plugin
+-- Module:      Boots.App.Internal
 -- Copyright:   2019 Daniel YU
 -- License:     BSD3
 -- Maintainer:  leptonyu@gmail.com
@@ -8,14 +8,10 @@
 --
 -- This module defines a generic application monad transformation.
 --
-module Boots.Internal.App(
+module Boots.App.Internal(
     AppT
   , App
   , runAppT
-  , liftIO
-  , ask
-  , lift
-  , throwM
   ) where
 
 import           Control.Monad.Catch

@@ -4,19 +4,18 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3c943fd98191d5c69c47458869f5bf5d74f75122c01ffa58036f1abdc41f30a4
+-- hash: a5875f51caa2ea1331c3cd68b9766c9f2f6242821c4e7d315066ff04f68da004
 
-name:           boots
-version:        0.0.4
-synopsis:       Boot application by plugins
-description:    Boot application by using plugins.
-category:       Library
+name:           boots-app
+version:        0.1
+synopsis:       Startup factories using IoC monad
+description:    Provide basic factories base on boots.
+category:       Library, Application
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU
 maintainer:     leptonyu@gmail.com
 copyright:      2019 Daniel YU
 license:        MIT
-license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
@@ -24,20 +23,19 @@ extra-source-files:
 library
   exposed-modules:
       Boots
-      Boots.Plugin
-      Boots.Plugin.Simple
-      Boots.Plugin.Salak
-      Boots.Plugin.Logger
+      Boots.App
+      Boots.Factory.Salak
+      Boots.Factory.Application
+      Boots.Factory.Logger
   other-modules:
-      Boots.Internal
-      Boots.Internal.App
-      Boots.Internal.Plugin
+      Boots.App.Internal
   hs-source-dirs:
       src
   default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
+    , boots
     , data-default
     , exceptions
     , fast-logger
@@ -46,6 +44,7 @@ library
     , mtl
     , salak
     , salak-yaml
+    , splitmix
     , text
     , unliftio-core
   default-language: Haskell2010
@@ -55,14 +54,12 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Boots
-      Boots.Internal
-      Boots.Internal.App
-      Boots.Internal.Plugin
-      Boots.Plugin
-      Boots.Plugin.Logger
-      Boots.Plugin.Salak
-      Boots.Plugin.Simple
-      Paths_boots
+      Boots.App
+      Boots.App.Internal
+      Boots.Factory.Application
+      Boots.Factory.Logger
+      Boots.Factory.Salak
+      Paths_boots_app
   hs-source-dirs:
       test
       src
@@ -70,6 +67,7 @@ test-suite spec
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
+    , boots
     , data-default
     , exceptions
     , fast-logger
@@ -79,6 +77,7 @@ test-suite spec
     , mtl
     , salak
     , salak-yaml
+    , splitmix
     , text
     , unliftio-core
   default-language: Haskell2010

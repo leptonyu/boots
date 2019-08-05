@@ -1,34 +1,18 @@
--- |
--- Module:      Boots.Plugin.Logger
--- Copyright:   2019 Daniel YU
--- License:     BSD3
--- Maintainer:  leptonyu@gmail.com
--- Stability:   experimental
--- Portability: portable
---
--- This module wrap a logging function into a plugin.
---
-module Boots.Plugin.Logger(
+module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
   , LogFunc
   , addTrace
-  , pluginLogger
-  -- ** Logger functions
-  , logInfo
-  , logDebug
-  , logWarn
-  , logError
-  , logOther
+  , buildLogger
+  , MonadLogger(..)
   ) where
 
-import           Boots.Internal
-import           Boots.Plugin.Salak
+import           Boots.App.Internal
+import           Boots.Factory
+import           Boots.Factory.Salak
 import           Control.Monad
 import           Control.Monad.Logger.CallStack
-import           Control.Monad.Reader
 import           Data.Default
-import           Data.Monoid                    ((<>))
 import           Data.Text                      (Text, toLower, unpack)
 import           Data.Word
 import           Lens.Micro
@@ -37,15 +21,15 @@ import           Salak
 import           System.Log.FastLogger
 
 -- | Environment providing a logging function.
-class HasLogger cxt where
-  askLogger :: Lens' cxt LogFunc
-  askLogLevel :: Lens' cxt (Writable LogLevel)
+class HasLogger env where
+  askLogger :: Lens' env LogFunc
+  askLogLevel :: Lens' env (Writable LogLevel)
   askLogLevel = askLogger . lens logLvl (\x y -> x { logLvl = y })
 
 instance HasLogger LogFunc where
   askLogger = id
 
-instance (MonadIO m, HasLogger cxt) => MonadLogger (Plugin cxt m) where
+instance (MonadIO m, HasLogger env) => MonadLogger (Factory m env) where
   monadLoggerLog a b c d = do
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
@@ -55,7 +39,7 @@ instance (MonadIO m, HasLogger cxt) => MonadLogger (AppT cxt m) where
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
 
-instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (Plugin cxt m) where
+instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (Factory m cxt) where
   askLoggerIO = logfunc <$> asks (view askLogger)
 
 instance (MonadIO m, HasLogger cxt) => MonadLoggerIO (AppT cxt m) where
@@ -124,11 +108,10 @@ newLogger name LogConfig{..} = do
 addTrace :: Text -> LogFunc -> LogFunc
 addTrace trace lf = lf { logfunc = \a b c d -> let p = "[" <> toLogStr trace <> "] " in logfunc lf a b c (p <> d) }
 
--- | Plugin providing a logging function.
-pluginLogger
-  :: (MonadIO m, MonadCatch m, HasSalak cxt)
-  => Text -- ^ Application name will be logged in log.
-  -> Plugin cxt m LogFunc
-pluginLogger name = do
+
+buildLogger
+  :: (MonadIO m, MonadCatch m, HasSalak env)
+  => Text -> Factory m env LogFunc
+buildLogger name = do
   lc <- require "logging"
-  bracketP (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
+  bracket (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)

@@ -1,0 +1,41 @@
+_common: !include "../common.yaml"
+name:                boots-app
+synopsis:            Startup factories using IoC monad
+description:         Provide basic factories base on boots.
+<<: *legal
+extra-source-files:
+- README.md
+dependencies:
+  - base >= 4.10 && < 5
+  - boots
+  - salak
+  - salak-yaml
+  - exceptions
+  - unliftio-core
+  - mtl
+  - microlens
+  - splitmix
+  - text
+  - monad-logger
+  - data-default
+  - fast-logger
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Boots
+    - Boots.App
+    - Boots.Factory.Salak
+    - Boots.Factory.Application
+    - Boots.Factory.Logger
+  other-modules:
+    - Boots.App.Internal
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - test
+      - src
+    dependencies:
+      - hspec == 2.*

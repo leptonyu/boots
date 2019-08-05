@@ -1,0 +1,26 @@
+_common: !include "../common.yaml"
+name:                boots
+synopsis:            IoC Monad in Haskell
+description:         Inverse of control monad used in building large application.
+<<: *legal
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.10 && < 5
+  - exceptions
+  - mtl
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Boots.Factory
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - test
+      - src
+    dependencies:
+      - hspec == 2.*

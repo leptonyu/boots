@@ -1,9 +1,7 @@
-resolver: nightly-2019-08-02
+resolver: nightly-2019-08-04
 
 packages:
-- .
+- boots
+- boots-app
 
-extra-deps:
-- salak-0.3.3
-- salak-yaml-0.3.3
 pvp-bounds: both
