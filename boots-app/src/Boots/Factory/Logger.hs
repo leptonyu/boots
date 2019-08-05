@@ -13,6 +13,7 @@ module Boots.Factory.Logger(
   , logError
   , logWarn
   , logOther
+  , LogLevel(..)
   ) where
 
 import           Boots.App.Internal
