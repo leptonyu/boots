@@ -6,6 +6,8 @@ module Boots.Factory.Logger(
   , buildLogger
   -- ** Log Functions
   , MonadLogger(..)
+  , MonadLoggerIO(..)
+  , runLoggingT
   , logInfo
   , logDebug
   , logError
