@@ -37,7 +37,6 @@ data AppEnv = AppEnv
   { name       :: Text    -- ^ Service name.
   , instanceId :: Text    -- ^ Instance id.
   , version    :: Version -- ^ Service version.
-  , tags       :: [Text]  -- ^ Service tags.
   , randSeed   :: MVar SMGen -- ^ Random seed
   , configure  :: Salak
   , logF       :: LogFunc
@@ -49,7 +48,6 @@ buildApp confName version = do
   within configure $ do
     name       <- fromMaybe (fromString confName) <$> require "application.name"
     logF       <- buildLogger name
-    tags       <- require "application.tags"
     randSeed   <- offer $ liftIO $ initSMGen >>= newMVar
     instanceId <- offer $ liftIO $ hex64 <$> random64 randSeed
     return AppEnv{..}
