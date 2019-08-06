@@ -47,9 +47,9 @@ buildApp confName version = do
   configure  <- buildSalak confName
   within configure $ do
     name       <- fromMaybe (fromString confName) <$> require "application.name"
-    logF       <- buildLogger name
     randSeed   <- offer $ liftIO $ initSMGen >>= newMVar
     instanceId <- offer $ liftIO $ hex64 <$> random64 randSeed
+    logF       <- buildLogger (name <> "," <> instanceId)
     return AppEnv{..}
 
 random64 :: MVar SMGen -> IO Word64
