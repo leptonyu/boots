@@ -1,5 +1,5 @@
 _common: !include "../common.yaml"
-version:             0.1.0.2
+version:             0.1.0.3
 name:                boots-app
 synopsis:            Startup factories using IoC monad
 description:         Provide basic factories base on boots.
@@ -11,6 +11,7 @@ dependencies:
   - boots >= 0.1
   - salak
   - salak-yaml
+  - menshen
   - exceptions
   - unliftio-core
   - mtl

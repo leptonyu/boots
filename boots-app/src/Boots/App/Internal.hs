@@ -17,6 +17,7 @@ module Boots.App.Internal(
 import           Control.Monad.Catch
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Reader
+import           Data.Menshen
 
 -- | Application monad transformation.
 newtype AppT cxt m a = AppT { unAppT :: ReaderT cxt m a }
@@ -40,5 +41,6 @@ instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
     withRunInIO $ \run ->
     inner (run . runAppT r)
 
+instance MonadThrow m => HasValid (AppT cxt m) where
 
 

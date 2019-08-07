@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d2bb612f52dae758edb014e6b9a94aed241b46b2421573fec37c60b939cefdb5
+-- hash: ed05cb38b8efe4acd9d7ce3bfcb97ddc1d0c21c672315ec630213d6676b7e121
 
 name:           boots-app
-version:        0.1.0.2
+version:        0.1.0.3
 synopsis:       Startup factories using IoC monad
 description:    Provide basic factories base on boots.
 category:       Library, Application
@@ -40,6 +40,7 @@ library
     , data-default
     , exceptions
     , fast-logger
+    , menshen
     , microlens
     , monad-logger
     , mtl
@@ -73,6 +74,7 @@ test-suite spec
     , exceptions
     , fast-logger
     , hspec ==2.*
+    , menshen
     , microlens
     , monad-logger
     , mtl
