@@ -126,12 +126,13 @@ traceVault v LogFunc{..} = LogFunc { logfunc = \a b c d -> logfunc a b c (go d),
     go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ L.lookup logKey v
 
 -- | Add additional trace info into log.
-addTrace :: Text -> LogFunc -> L.Vault -> L.Vault
-addTrace msg LogFunc{..} v =
+addTrace :: Maybe Text -> LogFunc -> L.Vault -> L.Vault
+addTrace (Just msg) LogFunc{..} v =
   let mt = L.lookup logKey v
   in case mt of
     Just m -> L.insert logKey (m <> "," <> msg) v
     _      -> L.insert logKey msg v
+addTrace _ _ v = v
 
 buildLogger
   :: (MonadIO m, MonadCatch m, HasSalak env)
