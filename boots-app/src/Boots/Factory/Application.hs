@@ -35,6 +35,9 @@ instance HasSalak (AppEnv cxt) where
 instance HasLogger (AppEnv cxt) where
   askLogger = lens logF (\x y -> x {logF = y})
 
+instance HasVault cxt (AppEnv cxt) where
+  askVault = lens vaultF (\x y -> x {vaultF = y})
+
 data AppEnv cxt = AppEnv
   { name       :: Text    -- ^ Service name.
   , instanceId :: Text    -- ^ Instance id.
