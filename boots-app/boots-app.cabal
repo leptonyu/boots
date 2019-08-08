@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ed05cb38b8efe4acd9d7ce3bfcb97ddc1d0c21c672315ec630213d6676b7e121
+-- hash: 321007e58f559127ea13e6c269b0864e6a9be5a8c7d44ced8435489918cfd21c
 
 name:           boots-app
 version:        0.1.0.3
@@ -49,6 +49,7 @@ library
     , splitmix
     , text
     , unliftio-core
+    , vault
   default-language: Haskell2010
 
 test-suite spec
@@ -83,4 +84,5 @@ test-suite spec
     , splitmix
     , text
     , unliftio-core
+    , vault
   default-language: Haskell2010

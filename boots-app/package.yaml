@@ -21,6 +21,7 @@ dependencies:
   - monad-logger
   - data-default
   - fast-logger
+  - vault
 
 library:
   source-dirs: src

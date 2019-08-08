@@ -2,6 +2,7 @@ module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
   , LogFunc
+  , traceVault
   , addTrace
   , buildLogger
   -- ** Log Functions
@@ -23,6 +24,7 @@ import           Control.Monad
 import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Text                      (Text, toLower, unpack)
+import qualified Data.Vault.Lazy                as L
 import           Data.Word
 import           Lens.Micro
 import           Lens.Micro.Extras
@@ -94,6 +96,7 @@ data LogFunc = LogFunc
   { logfunc :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
   , logLvl  :: Writable LogLevel
+  , logKey  :: L.Key Text
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -103,24 +106,36 @@ newLogger name LogConfig{..} = do
       ft = case file of
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
-  (l,close) <- newTimedFastLogger tc ft
-  lvl       <- toWritable level
-  return (LogFunc (toLogger lvl ln l) close lvl)
+  (l,logend) <- newTimedFastLogger tc ft
+  logLvl     <- toWritable level
+  logKey     <- L.newKey
+  let logfunc = toLogger logLvl ln l
+  return (LogFunc{..})
   where
-    toLogger lvl xn f Loc{..} _ ll s = do
-      lc <- getWritable lvl
+    toLogger logLvl ln f Loc{..} _ ll s = do
+      lc <- getWritable logLvl
       when (lc <= ll) $ f $ \t ->
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
-        in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
+        in toLogStr t <> " " <> toStr ll <> ln <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
 -- | Add additional trace info into log.
-addTrace :: Text -> LogFunc -> LogFunc
-addTrace trace lf = lf { logfunc = \a b c d -> let p = "[" <> toLogStr trace <> "] " in logfunc lf a b c (p <> d) }
+traceVault :: L.Vault -> LogFunc -> LogFunc
+traceVault v LogFunc{..} = LogFunc { logfunc = \a b c d -> logfunc a b c (go d), .. }
+  where
+    go :: LogStr -> LogStr
+    go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ L.lookup logKey v
 
+-- | Add additional trace info into log.
+addTrace :: Text -> LogFunc -> L.Vault -> L.Vault
+addTrace msg LogFunc{..} v =
+  let mt = L.lookup logKey v
+  in case mt of
+    Just m -> L.insert logKey (m <> "," <> msg) v
+    _      -> L.insert logKey msg v
 
 buildLogger
   :: (MonadIO m, MonadCatch m, HasSalak env)
   => Text -> Factory m env LogFunc
 buildLogger name = do
-  lc <- require "logging"
+  lc  <- require "logging"
   bracket (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
