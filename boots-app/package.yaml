@@ -9,7 +9,7 @@ extra-source-files:
 dependencies:
   - base >= 4.10 && < 5
   - boots >= 0.1
-  - salak
+  - salak >= 0.3.3
   - salak-yaml
   - menshen
   - exceptions
