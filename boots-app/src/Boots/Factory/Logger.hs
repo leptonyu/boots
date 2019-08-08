@@ -20,6 +20,7 @@ module Boots.Factory.Logger(
 import           Boots.App.Internal
 import           Boots.Factory
 import           Boots.Factory.Salak
+import           Boots.Factory.Vault
 import           Control.Monad
 import           Control.Monad.Logger.CallStack
 import           Data.Default
@@ -135,8 +136,9 @@ addTrace (Just msg) LogFunc{..} v =
 addTrace _ _ v = v
 
 buildLogger
-  :: (MonadIO m, MonadCatch m, HasSalak env)
-  => Text -> Factory m env LogFunc
-buildLogger name = do
+  :: (MonadIO m, MonadCatch m, HasSalak env, HasLogger cxt)
+  => VaultRef cxt -> Text -> Factory m env LogFunc
+buildLogger vf name = do
   lc  <- require "logging"
+  modifyVaultRef (over askLogger . traceVault) vf
   bracket (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)

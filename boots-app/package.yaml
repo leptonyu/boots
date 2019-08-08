@@ -31,6 +31,7 @@ library:
     - Boots.Factory.Salak
     - Boots.Factory.Application
     - Boots.Factory.Logger
+    - Boots.Factory.Vault
   other-modules:
     - Boots.App.Internal
 
