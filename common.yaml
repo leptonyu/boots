@@ -6,7 +6,7 @@
   maintainer:          leptonyu@gmail.com
   copyright:           2019 Daniel YU
   category:            Library, Application
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -ddump-to-file -ddump-hi
   default-extensions:
     - FlexibleInstances
     - MultiParamTypeClasses

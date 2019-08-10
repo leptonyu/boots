@@ -55,8 +55,8 @@ buildApp confName version = do
   within configure $ do
     name       <- fromMaybe (fromString confName) <$> require "application.name"
     randSeed   <- liftIO $ initSMGen >>= newMVar
-    instanceId <- liftIO $ hex64 <$> random64 randSeed
-    vaultF     <- liftIO $ newVaultRef
+    instanceId <- liftIO $ hex32 <$> random64 randSeed
+    vaultF     <- liftIO newVaultRef
     logF       <- buildLogger vaultF (name <> "," <> instanceId)
     return AppEnv{..}
 
@@ -67,6 +67,9 @@ random64 ref = modifyMVar ref (return . go . nextWord64)
 
 hex64 :: IsString a => Word64 -> a
 hex64 i = fromString $ let x = showHex i "" in replicate (16 - length x) '0' ++ x
+
+hex32 :: IsString a => Word64 -> a
+hex32 i = fromString $ let x = showHex i "" in drop 8 $ replicate (16 - length x) '0' ++ x
 
 rand64 :: (IsString a, MonadIO m) => MVar SMGen -> m a
 rand64 = liftIO . fmap hex64 . random64
