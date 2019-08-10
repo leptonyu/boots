@@ -4,15 +4,16 @@ module Boots.Factory.Application(
   , buildApp
   , rand64
   , buildRandom
+  , getRand
   ) where
 
+import           Boots.App.Internal
 import           Boots.Factory
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent.MVar
 import           Data.Maybe
-import           Data.Proxy
 import           Data.String
 import           Data.Text               (Text)
 import           Data.Version            (Version)
@@ -23,7 +24,7 @@ import           Numeric                 (showHex)
 import           Salak
 import           System.Random.SplitMix
 
-class HasApp cxt env where
+class HasApp cxt env | env -> cxt where
   askApp :: Lens' env (AppEnv cxt)
 
 instance HasApp cxt (AppEnv cxt) where
@@ -53,8 +54,8 @@ buildApp confName version = do
   configure  <- buildSalak confName
   within configure $ do
     name       <- fromMaybe (fromString confName) <$> require "application.name"
-    randSeed   <- offer $ liftIO $ initSMGen >>= newMVar
-    instanceId <- offer $ liftIO $ hex64 <$> random64 randSeed
+    randSeed   <- liftIO $ initSMGen >>= newMVar
+    instanceId <- liftIO $ hex64 <$> random64 randSeed
     vaultF     <- liftIO $ newVaultRef
     logF       <- buildLogger vaultF (name <> "," <> instanceId)
     return AppEnv{..}
@@ -70,7 +71,12 @@ hex64 i = fromString $ let x = showHex i "" in replicate (16 - length x) '0' ++ 
 rand64 :: (IsString a, MonadIO m) => MVar SMGen -> m a
 rand64 = liftIO . fmap hex64 . random64
 
-buildRandom :: forall cxt env a m. (IsString a, MonadIO m, HasApp cxt env) => Proxy cxt -> Factory m env a
-buildRandom _ = do
-  (AppEnv{..} :: AppEnv cxt) <- asks (view askApp)
+getRand :: (IsString a, HasApp cxt env, MonadIO m) => AppT env m a
+getRand = do
+  AppEnv{..} <- asks (view askApp)
+  lift $ rand64 randSeed
+
+buildRandom :: (IsString a, MonadIO m, HasApp cxt env) => Factory m env a
+buildRandom = do
+  AppEnv{..} <- asks (view askApp)
   offer $ rand64 randSeed

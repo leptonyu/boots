@@ -12,7 +12,7 @@ type VaultRef env = MVar (L.Vault -> env -> env)
 newVaultRef :: IO (VaultRef env)
 newVaultRef = newMVar $ const id
 
-class HasVault cxt env where
+class HasVault cxt env | env -> cxt where
   askVault :: Lens' env (VaultRef cxt)
 
 instance HasVault cxt (VaultRef cxt) where

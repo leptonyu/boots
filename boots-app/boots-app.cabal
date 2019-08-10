@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0e508cd755ecdbedc06cd66d75488838816cbc12f267223824566e778e4bad13
+-- hash: 04a00f3d32911f7a6f6f15be4adcde3a55f736945bb071c3cf21577256bc8c1b
 
 name:           boots-app
-version:        0.1.0.3
+version:        0.1.0.4
 synopsis:       Startup factories using IoC monad
 description:    Provide basic factories base on boots.
 category:       Library, Application
@@ -33,7 +33,7 @@ library
       Boots.App.Internal
   hs-source-dirs:
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
@@ -68,7 +68,7 @@ test-suite spec
   hs-source-dirs:
       test
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
