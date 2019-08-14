@@ -8,6 +8,7 @@ cabal-dev
 *.lock
 *.o
 *.hi
+*.dump-hi
 *.chi
 *.chs.h
 *.dyn_o

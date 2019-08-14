@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2fa5dd861d2726a455dd4b9b97b3f4f8670c022ec7bd2166cab555f24d532c3e
+-- hash: f068f2124d9a6d0a3d6642395b0e5cf1d4a8975f939dd0706cea260df3e9e9bb
 
 name:           boots-app
-version:        0.1.0.4
+version:        0.1.1
 synopsis:       Startup factories using IoC monad
 description:    Provide basic factories base on boots.
 category:       Library, Application
@@ -34,7 +34,7 @@ library
   hs-source-dirs:
       src
   default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -ddump-to-file -ddump-hi
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
     , boots >=0.1
@@ -45,7 +45,7 @@ library
     , microlens
     , monad-logger
     , mtl
-    , salak >=0.3.3.1
+    , salak
     , salak-yaml
     , splitmix
     , text
@@ -69,7 +69,7 @@ test-suite spec
       test
       src
   default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -ddump-to-file -ddump-hi
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
     , boots >=0.1
@@ -81,7 +81,7 @@ test-suite spec
     , microlens
     , monad-logger
     , mtl
-    , salak >=0.3.3.1
+    , salak
     , salak-yaml
     , splitmix
     , text

@@ -57,7 +57,7 @@ instance (MonadIO m, HasLogger env) => MonadLoggerIO (Factory m env) where
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
   askLoggerIO = logfunc <$> asks (view askLogger)
 
-instance Monad m => FromProp m LogLevel where
+instance FromProp m LogLevel where
   fromProp = readEnum (fromEnumProp.toLower)
     where
       fromEnumProp "debug" = Right   LevelDebug

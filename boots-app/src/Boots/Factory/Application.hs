@@ -31,7 +31,7 @@ instance HasApp cxt (AppEnv cxt) where
   askApp = id
 
 instance HasSalak (AppEnv cxt) where
-  askSourcePack = lens configure (\x y -> x {configure = y})
+  askSalak = lens configure (\x y -> x {configure = y})
 
 instance HasLogger (AppEnv cxt) where
   askLogger = lens logF (\x y -> x {logF = y})
