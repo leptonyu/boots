@@ -18,6 +18,7 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 *.prof
+.ghc*
 *.aux
 *.hp
 *.eventlog
