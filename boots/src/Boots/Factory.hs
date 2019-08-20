@@ -93,27 +93,35 @@ newtype Factory m env component
   deriving (Functor, Applicative, Monad, MonadReader env, MonadIO)
 
 instance MonadThrow m => MonadThrow (Factory m env) where
+  {-# INLINE throwM #-}
   throwM = offer . throwM
 
 instance Monad m => MonadCont (Factory m env) where
+  {-# INLINE callCC #-}
   callCC a = do
     env <- ask
     wrap . running env $ callCC a
 
 instance Semigroup (Factory m env env) where
+  {-# INLINE (<>) #-}
   a <> b = a >>= (`within` b)
 
 instance Monoid (Factory m env env) where
+  {-# INLINE mempty #-}
   mempty = ask
+  {-# INLINE mappend #-}
   mappend = (<>)
 
 instance C.Category (Factory m) where
+  {-# INLINE id #-}
   id  = ask
+  {-# INLINE (.) #-}
   a . b = b >>= (`within` a)
 
 -- | Running the factory.
 running :: env -> Factory m env c -> (c -> m ()) -> m ()
 running env pma = runContT (runReaderT (unFactory pma) env)
+{-# INLINE running #-}
 
 -- | Run the application using a specified factory.
 boot :: Monad m => Factory m () (m ()) -> m ()
@@ -122,24 +130,29 @@ boot factory = running () factory id
 -- | Switch factory environment.
 withFactory :: (env' -> env) -> Factory m env component -> Factory m env' component
 withFactory = unsafeCoerce withReaderT
+{-# INLINE withFactory #-}
 
 -- | Construct factory under @env@, and adapt it to fit another @env'@.
 within :: env -> Factory m env component -> Factory m env' component
 within = withFactory . const
+{-# INLINE within #-}
 
 -- | Polish @component@ by a sequence of 'Factory', and construct a unified one.
 polish :: component -> [Factory m component component] -> Factory m env' component
 polish env = within env . mconcat
+{-# INLINE polish #-}
 
 -- | Nature transform of one 'Factory' with monad @n@ into another with monad @m@.
 natTrans :: (n () -> m ()) -> (m () -> n ()) -> Factory n env component -> Factory m env component
 natTrans fnm fmn fac = do
   env <- ask
   wrap $ \fm -> fnm $ running env fac (fmn . fm)
+{-# INLINE natTrans #-}
 
 -- | Wrap raw procedure into a 'Factory'.
 wrap :: ((c -> m ()) -> m ()) -> Factory m env c
 wrap = Factory . lift . ContT
+{-# INLINE wrap #-}
 
 -- | Construct open-close resource into a 'Factory'.
 bracket :: MonadCatch m => m res -> (res -> m ()) -> Factory m env res
@@ -152,11 +165,15 @@ bracket open close = wrap $ \f -> do
     go (Left e) _ = throwM (e :: SomeException)
     go _ (Left e) = throwM (e :: SomeException)
     go _ _        = return ()
+    {-# INLINE go #-}
+{-# INLINE bracket #-}
 
 -- | Lift a monad @m@ into a 'Factory'.
 offer :: Monad m => m a -> Factory m env a
 offer ma = wrap (ma >>=)
+{-# INLINE offer #-}
 
 -- | Put a delay action into 'Factory', it will run at close phase.
 delay :: MonadCatch m => m () -> Factory m env ()
 delay ma = bracket (return ()) (const ma)
+{-# INLINE delay #-}

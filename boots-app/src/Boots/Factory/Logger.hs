@@ -1,7 +1,7 @@
 module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
-  , LogFunc
+  , LogFunc(..)
   , traceVault
   , addTrace
   , buildLogger
@@ -37,25 +37,31 @@ class HasLogger env where
   askLogger :: Lens' env LogFunc
   askLogLevel :: Lens' env (Writable LogLevel)
   askLogLevel = askLogger . lens logLvl (\x y -> x { logLvl = y })
+  {-# INLINE askLogLevel #-}
 
 instance HasLogger LogFunc where
   askLogger = id
+  {-# INLINE askLogger #-}
 
 instance (MonadIO m, HasLogger env) => MonadLogger (Factory m env) where
   monadLoggerLog a b c d = do
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
+  {-# INLINE monadLoggerLog #-}
 
 instance (MonadIO m, HasLogger env) => MonadLogger (AppT env m) where
   monadLoggerLog a b c d = do
     LogFunc{..} <- asks (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
+  {-# INLINE monadLoggerLog #-}
 
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (Factory m env) where
   askLoggerIO = logfunc <$> asks (view askLogger)
+  {-# INLINE askLoggerIO #-}
 
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
   askLoggerIO = logfunc <$> asks (view askLogger)
+  {-# INLINE askLoggerIO #-}
 
 instance FromProp m LogLevel where
   fromProp = readEnum (fromEnumProp.toLower)
@@ -65,6 +71,8 @@ instance FromProp m LogLevel where
       fromEnumProp "warn"  = Right   LevelWarn
       fromEnumProp "error" = Right   LevelError
       fromEnumProp u       = Left $ "unknown level: " ++ unpack u
+      {-# INLINE fromEnumProp #-}
+  {-# INLINE fromProp #-}
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
@@ -92,6 +100,7 @@ instance MonadIO m => FromProp m LogConfig where
     <*> "max-size"    .?: maxSize
     <*> "max-history" .?: rotateHistory
     <*> "level"       .?: level
+  {-# INLINE fromProp #-}
 
 data LogFunc = LogFunc
   { logfunc :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
@@ -125,6 +134,8 @@ traceVault v LogFunc{..} = LogFunc { logfunc = \a b c d -> logfunc a b c (go d),
   where
     go :: LogStr -> LogStr
     go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ L.lookup logKey v
+    {-# INLINE go #-}
+{-# INLINE traceVault #-}
 
 -- | Add additional trace info into log.
 addTrace :: Maybe Text -> LogFunc -> L.Vault -> L.Vault
@@ -134,6 +145,7 @@ addTrace (Just msg) LogFunc{..} v =
     Just m -> L.insert logKey (m <> "," <> msg) v
     _      -> L.insert logKey msg v
 addTrace _ _ v = v
+{-# INLINE addTrace #-}
 
 buildLogger
   :: (MonadIO m, MonadCatch m, HasSalak env, HasLogger cxt)

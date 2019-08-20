@@ -17,12 +17,15 @@ class HasSalak env where
 
 instance HasSalak Salak where
   askSalak = id
+  {-# INLINE askSalak #-}
 
 instance (HasSalak env, Monad m) => MonadSalak (Factory m env) where
   askSourcePack = asks (view askSalak)
+  {-# INLINE askSourcePack #-}
 
 instance (HasSalak env, Monad m) => MonadSalak (AppT env m) where
   askSourcePack = asks (view askSalak)
+  {-# INLINE askSourcePack #-}
 
 buildSalak :: (MonadIO m, MonadCatch m) => String -> Factory m () Salak
 buildSalak name = offer $ runSalakWithYaml name askSourcePack

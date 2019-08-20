@@ -29,6 +29,7 @@ type App cxt = AppT cxt IO
 -- | Run application monad transformation.
 runAppT :: cxt -> AppT cxt m a -> m a
 runAppT cxt ma = runReaderT (unAppT ma) cxt
+{-# INLINE runAppT #-}
 
 instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
   {-# INLINE askUnliftIO #-}
@@ -41,6 +42,5 @@ instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
     withRunInIO $ \run ->
     inner (run . runAppT r)
 
-instance MonadThrow m => HasValid (AppT cxt m) where
-
+instance MonadThrow m => HasValid (AppT cxt m)
 

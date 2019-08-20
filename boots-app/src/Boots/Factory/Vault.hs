@@ -11,18 +11,22 @@ type VaultRef env = MVar (L.Vault -> env -> env)
 
 newVaultRef :: IO (VaultRef env)
 newVaultRef = newMVar $ const id
+{-# INLINE newVaultRef #-}
 
 class HasVault cxt env | env -> cxt where
   askVault :: Lens' env (VaultRef cxt)
 
 instance HasVault cxt (VaultRef cxt) where
   askVault = id
+  {-# INLINE askVault #-}
 
 modifyVault :: (HasVault cxt env, MonadIO n) => (L.Vault -> cxt -> cxt) -> Factory n env ()
 modifyVault f = asks (view askVault) >>= modifyVaultRef f
+{-# INLINE modifyVault #-}
 
 modifyVaultRef :: MonadIO n => (L.Vault -> env -> env) -> VaultRef env -> n ()
 modifyVaultRef f ref = liftIO $ modifyMVar_ ref $ \g -> return $ \v -> g v . f v
+{-# INLINE modifyVaultRef #-}
 
 runVault :: (MonadIO m, HasVault env env) => env -> L.Vault -> AppT env m a -> m a
 runVault env v ma = do

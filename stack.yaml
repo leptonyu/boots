@@ -5,7 +5,7 @@ packages:
 - boots-app
 
 extra-deps:
-- salak-0.3.3.2
-- salak-yaml-0.3.3.2
+- salak-0.3.4.1
+- salak-yaml-0.3.4.1
 
 pvp-bounds: both
