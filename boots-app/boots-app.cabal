@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cf0535383135cb96e3c01d60950f40073696414f23209f3e17ba889fa92de1d3
+-- hash: f47381866e20c756668dbb0741f44ac37be459cda543b9013cb4995f12f14894
 
 name:           boots-app
 version:        0.1.1
@@ -45,7 +45,7 @@ library
     , microlens
     , monad-logger
     , mtl
-    , salak
+    , salak >=0.3.5
     , salak-yaml
     , splitmix
     , text
@@ -81,7 +81,7 @@ test-suite spec
     , microlens
     , monad-logger
     , mtl
-    , salak
+    , salak >=0.3.5
     , salak-yaml
     , splitmix
     , text

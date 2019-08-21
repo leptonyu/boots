@@ -15,7 +15,7 @@ dependencies:
   - microlens
   - monad-logger
   - mtl
-  - salak
+  - salak >= 0.3.5
   - salak-yaml
   - splitmix
   - text
