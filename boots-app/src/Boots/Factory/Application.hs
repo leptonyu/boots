@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams #-}
 module Boots.Factory.Application(
     HasApp(..)
   , AppEnv(..)
@@ -13,15 +14,17 @@ import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent.MVar
+import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Maybe
 import           Data.String
-import           Data.Text               (Text)
-import           Data.Version            (Version)
+import           Data.Text                      (Text)
+import           Data.Tuple
+import           Data.Version                   (Version)
 import           Data.Word
 import           Lens.Micro
 import           Lens.Micro.Extras
-import           Numeric                 (showHex)
+import           Numeric                        (showHex)
 import           Salak
 import           Salak.Yaml
 import           System.Random.SplitMix
@@ -60,7 +63,7 @@ buildApp confName version = do
   mv           <- liftIO $ newMVar []
   configure    <- liftIO $ runSalak def
       { configName = confName
-      , loggerF = \s -> modifyMVar_ mv $ return . (s:)
+      , loggerF = \c s -> modifyMVar_ mv $ return . ((c,s):)
       , loadExt = loadByExt YAML
       } askSourcePack
   within configure $ do
@@ -69,16 +72,13 @@ buildApp confName version = do
     instanceId <- liftIO $ hex32 <$> random64 randSeed
     vaultF     <- liftIO newVaultRef
     logF       <- buildLogger vaultF (name <> "," <> instanceId)
-    let lf = \s -> runLoggingT (logInfo $ fromString s) (logfunc logF)
-    liftIO $ swapMVar mv [] >>= sequence_ . fmap lf
+    let lf c s = runLoggingT (logDebugCS c s :: LoggingT IO ()) (logfunc logF)
+    liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
     setLogF lf
     return AppEnv{..}
 
 random64 :: MVar SMGen -> IO Word64
-random64 ref = modifyMVar ref (return . go . nextWord64)
-  where
-    go (a,b) = (b,a)
-    {-# INLINE go #-}
+random64 ref = modifyMVar ref (return . swap . nextWord64)
 {-# INLINE random64 #-}
 
 hex64 :: IsString a => Word64 -> a

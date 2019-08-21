@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d28dc602d7ff040447022fb40ae88f67443c631b7b5776ebbb692e3815c3d78b
+-- hash: cf0535383135cb96e3c01d60950f40073696414f23209f3e17ba889fa92de1d3
 
 name:           boots-app
 version:        0.1.1
@@ -37,7 +37,7 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots >=0.1
+    , boots
     , data-default
     , exceptions
     , fast-logger
@@ -45,7 +45,7 @@ library
     , microlens
     , monad-logger
     , mtl
-    , salak >=0.3.3.2
+    , salak
     , salak-yaml
     , splitmix
     , text
@@ -72,7 +72,7 @@ test-suite spec
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots >=0.1
+    , boots
     , data-default
     , exceptions
     , fast-logger
@@ -81,7 +81,7 @@ test-suite spec
     , microlens
     , monad-logger
     , mtl
-    , salak >=0.3.3.2
+    , salak
     , salak-yaml
     , splitmix
     , text

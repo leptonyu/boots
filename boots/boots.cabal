@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 67e25fe69f8c5f4066d86ffafaa5c74883e46b5444fb66eaf610c72d2fdb1aa4
+-- hash: 866669686ef9aa8504623bb5bb2864e4a73cf59901c52a9ec03f6d858b53ae42
 
 name:           boots
 version:        0.1.1
@@ -50,6 +50,6 @@ test-suite spec
   build-depends:
       base >=4.10 && <5
     , exceptions
-    , hspec ==2.*
+    , hspec
     , mtl
   default-language: Haskell2010

@@ -5,7 +5,10 @@ packages:
 - boots-app
 
 extra-deps:
-- salak-0.3.4.1
-- salak-yaml-0.3.4.1
+- git: https://github.com/leptonyu/salak.git 
+  commit: 61932dc9b7a13725faa1257dad9fdc90b156d388
+  subdirs:
+  - salak
+  - salak-yaml
 
 pvp-bounds: both

@@ -7,19 +7,19 @@ extra-source-files:
 - README.md
 dependencies:
   - base >= 4.10 && < 5
-  - boots >= 0.1
-  - salak >= 0.3.3.2
-  - salak-yaml
-  - menshen
+  - boots
+  - data-default
   - exceptions
-  - unliftio-core
-  - mtl
+  - fast-logger
+  - menshen
   - microlens
+  - monad-logger
+  - mtl
+  - salak
+  - salak-yaml
   - splitmix
   - text
-  - monad-logger
-  - data-default
-  - fast-logger
+  - unliftio-core
   - vault
 
 library:
