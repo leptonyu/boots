@@ -3,6 +3,7 @@ module Boots.Factory.Application(
     HasApp(..)
   , AppEnv(..)
   , buildApp
+  , forkRand
   , rand64
   , buildRandom
   , getRand
@@ -76,6 +77,14 @@ buildApp confName version = do
     liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
     setLogF lf
     return AppEnv{..}
+
+
+forkRand :: MVar SMGen -> IO (MVar SMGen)
+forkRand ms = do
+  sv <- modifyMVar ms (return . splitSMGen)
+  newMVar sv
+{-# INLINE forkRand #-}
+
 
 random64 :: MVar SMGen -> IO Word64
 random64 ref = modifyMVar ref (return . swap . nextWord64)
