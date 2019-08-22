@@ -20,6 +20,14 @@ instance HasVault cxt (VaultRef cxt) where
   askVault = id
   {-# INLINE askVault #-}
 
+
+modifyContext :: (HasVault cxt env, MonadIO n) => (Maybe a -> cxt -> cxt) -> Factory n env (L.Key a)
+modifyContext f = do
+  key <- liftIO L.newKey
+  modifyVault $ f . L.lookup key
+  return key
+{-# INLINE modifyContext #-}
+
 modifyVault :: (HasVault cxt env, MonadIO n) => (L.Vault -> cxt -> cxt) -> Factory n env ()
 modifyVault f = asks (view askVault) >>= modifyVaultRef f
 {-# INLINE modifyVault #-}
