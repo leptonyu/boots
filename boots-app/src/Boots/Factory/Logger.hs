@@ -148,7 +148,7 @@ addTrace _ _ v = v
 {-# INLINE addTrace #-}
 
 buildLogger
-  :: (MonadIO m, MonadCatch m, HasSalak env, HasLogger cxt)
+  :: (MonadIO m, MonadMask m, HasSalak env, HasLogger cxt)
   => VaultRef cxt -> Text -> Factory m env LogFunc
 buildLogger vf name = do
   lc  <- require "logging"

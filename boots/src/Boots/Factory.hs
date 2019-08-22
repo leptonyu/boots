@@ -70,6 +70,7 @@ module Boots.Factory(
   -- ** Other
   , MonadThrow(..)
   , MonadCatch
+  , MonadMask
   , MonadReader(..)
   , asks
   , MonadIO(..)
@@ -155,10 +156,10 @@ wrap = Factory . lift . ContT
 {-# INLINE wrap #-}
 
 -- | Construct open-close resource into a 'Factory'.
-bracket :: MonadCatch m => m res -> (res -> m ()) -> Factory m env res
-bracket open close = wrap $ \f -> do
+bracket :: MonadMask m => m res -> (res -> m ()) -> Factory m env res
+bracket open close = wrap $ \f -> mask $ \restore -> do
   res <- open
-  a   <- try $ f res
+  a   <- try $ restore $ f res
   b   <- try $ close res
   go a b
   where
@@ -174,6 +175,6 @@ offer ma = wrap (ma >>=)
 {-# INLINE offer #-}
 
 -- | Put a delay action into 'Factory', it will run at close phase.
-delay :: MonadCatch m => m () -> Factory m env ()
+delay :: MonadMask m => m () -> Factory m env ()
 delay ma = bracket (return ()) (const ma)
 {-# INLINE delay #-}

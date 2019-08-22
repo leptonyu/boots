@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 07ea4190e76748290f6abd6bd660c00f0d6ba2c91a51c3021fb010274bb510ac
+-- hash: 2535fb6173ea90e5fce2997eb7b6c6dc1356435a23d1a3745aa2994d60fa4134
 
 name:           boots
-version:        0.1.1
+version:        0.1.1.1
 synopsis:       IoC Monad in Haskell
 description:    Inverse of control monad used in building large application.
 category:       Library, Application

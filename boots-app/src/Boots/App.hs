@@ -14,13 +14,13 @@ natA fenc = do
   natTrans (runAppT env) lift fenc
 {-# INLINE natA #-}
 
-delayA :: MonadCatch m => AppT env m () -> Factory m env ()
+delayA :: MonadMask m => AppT env m () -> Factory m env ()
 delayA app = do
   env <- ask
   delay $ runAppT env app
 {-# INLINE delayA #-}
 
-bracketA :: MonadCatch m => AppT env m res -> (res -> AppT env m ()) -> Factory m env res
+bracketA :: MonadMask m => AppT env m res -> (res -> AppT env m ()) -> Factory m env res
 bracketA open close = do
   env <- ask
   bracket (runAppT env open) (runAppT env . close)

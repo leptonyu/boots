@@ -58,7 +58,7 @@ data AppEnv cxt = AppEnv
   , vaultF     :: VaultRef cxt
   }
 
-buildApp :: (HasLogger cxt, MonadIO m, MonadCatch m) => String -> Version -> Factory m () (AppEnv cxt)
+buildApp :: (HasLogger cxt, MonadIO m, MonadMask m) => String -> Version -> Factory m () (AppEnv cxt)
 buildApp confName version = do
   mv           <- liftIO $ newMVar []
   configure    <- liftIO $ runSalak def
