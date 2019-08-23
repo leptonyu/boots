@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eb4a1e72c713f4608451bc51c0765fb85ea81957c587ac5dd35076284c266b7e
+-- hash: e9fc41a47169f0252ac0347ae3c494d5766d2e71ea1a2925f54dc2caaaed11ba
 
 name:           boots-app
 version:        0.2
@@ -44,6 +44,7 @@ library
     , fast-logger >=2.4.16 && <2.5
     , menshen >=0.0.3 && <0.1
     , microlens >=0.4.10 && <0.5
+    , monad-logger
     , mtl >=2.2.2 && <2.3
     , salak >=0.3.5 && <0.4
     , salak-yaml >=0.3.5 && <0.4
@@ -79,6 +80,7 @@ test-suite spec
     , hspec ==2.*
     , menshen >=0.0.3 && <0.1
     , microlens >=0.4.10 && <0.5
+    , monad-logger
     , mtl >=2.2.2 && <2.3
     , salak >=0.3.5 && <0.4
     , salak-yaml >=0.3.5 && <0.4

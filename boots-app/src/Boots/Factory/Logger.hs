@@ -20,6 +20,7 @@ module Boots.Factory.Logger(
   , logFatal
   , logCS
   , toLogStr
+  , toLogger
   , LogLevel(..)
   ) where
 
@@ -30,6 +31,7 @@ import           Control.Concurrent
 import           Control.Exception     (SomeException, catch)
 import           Control.Monad
 import           Control.Monad.Factory
+import qualified Control.Monad.Logger  as L
 import           Data.Default
 import           Data.Int
 import           Data.Text             (Text, toLower, unpack)
@@ -148,7 +150,6 @@ instance Default SrcLoc where
     "<unknown>"
     0 0 0 0
 
-
 data LogFunc = LogFunc
   { logfunc :: SrcLoc -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
@@ -156,6 +157,18 @@ data LogFunc = LogFunc
   , logKey  :: L.Key Text
   , logFail :: IO Int64
   }
+
+toLogger :: LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> LogStr -> IO ()
+toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll)
+  where
+    g1 = SrcLoc loc_package loc_module loc_filename (fst loc_start) (snd loc_start) (fst loc_end) (snd loc_end)
+    g2 L.LevelDebug     = LevelDebug
+    g2 L.LevelInfo      = LevelInfo
+    g2 L.LevelWarn      = LevelWarn
+    g2 L.LevelError     = LevelError
+    g2 (L.LevelOther _) = LevelTrace
+
+
 
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
