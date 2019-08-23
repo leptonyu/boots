@@ -1,5 +1,8 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ImplicitParams        #-}
+{-# LANGUAGE DuplicateRecordFields  #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE ImplicitParams         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 module Boots.Factory.Application(
     HasApp(..)
   , AppEnv(..)
@@ -10,6 +13,7 @@ module Boots.Factory.Application(
   , buildApp
   ) where
 
+import           Boots.App.Internal
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
@@ -20,6 +24,7 @@ import           Data.Default
 import           Data.Maybe
 import           Data.String
 import           Data.Text                      (Text)
+import           Data.Tuple
 import           Data.Version                   (Version)
 import           Data.Word
 import           Lens.Micro
@@ -59,25 +64,28 @@ data AppEnv cxt = AppEnv
   , logF       :: LogFunc
   , vaultF     :: VaultRef cxt
   , configure  :: Salak
-  , randSeed   :: SMGen -- ^ Random seed
+  , randSeed   :: MVar SMGen -- ^ Random seed
   }
 
 class HasRandom env where
-  askRandom :: Lens' env SMGen
+  askRandom :: Lens' env (MVar SMGen)
 
-instance HasRandom SMGen where
+instance HasRandom (MVar SMGen) where
   askRandom = id
   {-# INLINE askRandom #-}
 
 class Monad m => MonadRandom env m | m -> env where
   nextW64 :: m Word64
 
-instance (HasRandom env, MonadMask n) => MonadRandom env (Factory n env) where
+instance (HasRandom env, MonadMask n, MonadIO n) => MonadRandom env (Factory n env) where
   nextW64 = do
-    env <- getEnv
-    let (w, seed) = nextWord64 $ view askRandom env
-    putEnv $ over askRandom (const seed) env
-    return w
+    mref <- asksEnv (view askRandom)
+    liftIO $ modifyMVar mref $ return . swap . nextWord64
+
+instance (HasRandom env, MonadIO n) => MonadRandom env (AppT env n) where
+  nextW64 = do
+    mref <- asks (view askRandom)
+    liftIO $ modifyMVar mref $ return . swap . nextWord64
 
 buildApp :: forall cxt m. (HasLogger cxt, MonadIO m, MonadMask m) => String -> Version -> Factory m () (AppEnv cxt)
 buildApp confName version = do
@@ -93,7 +101,8 @@ buildApp confName version = do
     $ fromMaybe (fromString confName)
     <$> require "application.name"
   -- Generate instanceid
-  (randSeed, instanceId) <- liftIO initSMGen >>> runEnv (hex32 <$> nextW64)
+  randSeed    <- liftIO $ initSMGen >>= newMVar
+  instanceId  <- within randSeed $ hex32 <$> nextW64
   -- Initialize logger
   (vaultF, logF)         <- within (VaultRef $ const id)
     $ runEnv

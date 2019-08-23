@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 module Control.Monad.Factory.Class(
     MonadFactory(..)
   , defer

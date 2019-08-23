@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 module Boots.Factory.Vault where
 
 import           Boots.App.Internal

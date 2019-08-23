@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- |
 -- Module:      Boots.App.Internal
 -- Copyright:   2019 Daniel YU

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 535a89d856fe559e16b90ad65f43ee23653f869e21dd91331053a757b493d712
+-- hash: 2819b3ba5b04ac865928f08d9fd13e3c4d2098085122be977eafed122357b257
 
 name:           boots-app
 version:        0.2
@@ -34,7 +34,7 @@ library
       Paths_boots_app
   hs-source-dirs:
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds TypeApplications
+  default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
@@ -69,7 +69,7 @@ test-suite spec
   hs-source-dirs:
       test
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds TypeApplications
+  default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5

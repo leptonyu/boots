@@ -1,4 +1,7 @@
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeApplications      #-}
 module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
