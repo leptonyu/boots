@@ -110,7 +110,7 @@ data LogFunc = LogFunc
   , logend  :: IO ()
   , logLvl  :: Writable LogLevel
   , logKey  :: L.Key Text
-  , logFail :: MVar Int64
+  , logFail :: IO Int64
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -123,8 +123,12 @@ newLogger name LogConfig{..} = do
   (l,logend) <- newTimedFastLogger tc ft
   logLvl     <- toWritable level
   logKey     <- L.newKey
-  logFail    <- newMVar 0
-  let logfunc a b c d = toLogger logLvl ln l a b c d `catch` \(_ :: SomeException) -> modifyMVar_ logFail (return . (+1))
+  logFailM   <- newMVar 0
+  let 
+    logFail = readMVar logFailM
+    logfunc a b c d 
+      = toLogger logLvl ln l a b c d 
+      `catch` \(_ :: SomeException) -> modifyMVar_ logFailM (return . (+1))
   return (LogFunc{..})
   where
     {-# INLINE toLogger #-}
