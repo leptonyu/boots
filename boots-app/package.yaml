@@ -33,6 +33,7 @@ library:
     - Boots.Factory.Vault
   other-modules:
     - Boots.App.Internal
+    - Paths_boots_app
 
 tests:
   spec:

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6957f1958f319cedf8c4babb0dd4ae53ae0e26588806445d1f2f3b052794c804
+-- hash: 535a89d856fe559e16b90ad65f43ee23653f869e21dd91331053a757b493d712
 
 name:           boots-app
 version:        0.2
@@ -31,6 +31,7 @@ library
       Boots.Factory.Vault
   other-modules:
       Boots.App.Internal
+      Paths_boots_app
   hs-source-dirs:
       src
   default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds TypeApplications
