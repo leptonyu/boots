@@ -158,8 +158,8 @@ data LogFunc = LogFunc
   , logFail :: IO Int64
   }
 
-toLogger :: LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> LogStr -> IO ()
-toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll)
+toLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()
+toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr
   where
     g1 = SrcLoc loc_package loc_module loc_filename (fst loc_start) (snd loc_start) (fst loc_end) (snd loc_end)
     g2 L.LevelDebug     = LevelDebug
@@ -167,8 +167,6 @@ toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll)
     g2 L.LevelWarn      = LevelWarn
     g2 L.LevelError     = LevelError
     g2 (L.LevelOther _) = LevelTrace
-
-
 
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
