@@ -4,6 +4,7 @@ module Boots.Factory.Application(
     HasApp(..)
   , AppEnv(..)
   , MonadRandom(..)
+  , HasRandom(..)
   , hex64
   , hex32
   , buildApp
