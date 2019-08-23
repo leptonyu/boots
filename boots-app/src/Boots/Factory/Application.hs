@@ -85,7 +85,6 @@ forkRand ms = do
   newMVar sv
 {-# INLINE forkRand #-}
 
-
 random64 :: MVar SMGen -> IO Word64
 random64 ref = modifyMVar ref (return . swap . nextWord64)
 {-# INLINE random64 #-}
