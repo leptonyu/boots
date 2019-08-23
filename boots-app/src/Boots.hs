@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Boots(
     module Control.Monad.Factory
   , module Boots.App
