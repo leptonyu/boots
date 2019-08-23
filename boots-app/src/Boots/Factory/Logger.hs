@@ -25,7 +25,7 @@ module Boots.Factory.Logger(
 import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
-import           Control.Concurrent.MVar
+import           Control.Concurrent
 import           Control.Exception              (SomeException, catch)
 import           Control.Monad
 import           Control.Monad.Factory
@@ -116,6 +116,7 @@ data LogFunc = LogFunc
   , logLvl  :: Writable LogLevel
   , logKey  :: L.Key Text
   , logFail :: IO Int64
+  , logChan :: Chan (IO ())
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -128,20 +129,20 @@ newLogger name LogConfig{..} = do
   logLvl     <- toWritable level
   logKey     <- L.newKey
   logFailM   <- newMVar 0
+  logChan    <- newChan
+  _ <- forkIO $ forever $ join $ readChan logChan
   (l,logend) <- newTimedFastLogger tc ft
   let
     logFail = readMVar logFailM
-    logfunc a b c d
-      = toLogger logLvl ln l a b c d
-      `catch` \(_ :: SomeException) -> modifyMVar_ logFailM (return . (+1))
-  return (LogFunc{..})
-  where
-    {-# INLINE toLogger #-}
-    toLogger logLvl ln f Loc{..} _ ll s = do
+    logfunc a b c d = writeChan logChan $ toLogger a b c d `catch` catchE
+    catchE (_ :: SomeException) = modifyMVar_ logFailM (return . (+1))
+    toLogger Loc{..} _ ll s = do
       lc <- getWritable logLvl
-      when (lc <= ll) $ f $ \t ->
+      when (lc <= ll) $ l $ \t ->
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> ln <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
+
+  return (LogFunc{..})
 
 -- | Add additional trace info into log.
 traceVault :: L.Vault -> LogFunc -> LogFunc
