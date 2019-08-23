@@ -9,11 +9,11 @@ module Boots.Factory.Application(
   , buildApp
   ) where
 
-import           Boots.Factory
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent.MVar
+import           Control.Monad.Factory
 import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Maybe
@@ -40,36 +40,25 @@ instance HasLogger (AppEnv cxt) where
   {-# INLINE askLogger #-}
 
 instance HasSalak (AppEnv cxt) where
-  askSalak = askPre . askSalak
-  {-# INLINE askSalak #-}
-
-instance HasVault cxt (AppEnv cxt) where
-  askVault = askPre . askVault
-  {-# INLINE askVault #-}
-
-instance HasSalak (PreEnv cxt) where
   askSalak = lens configure (\x y -> x {configure = y})
   {-# INLINE askSalak #-}
 
-instance HasVault cxt (PreEnv cxt) where
+instance HasVault cxt (AppEnv cxt) where
   askVault = lens vaultF (\x y -> x {vaultF = y})
   {-# INLINE askVault #-}
 
-askPre :: Lens' (AppEnv cxt) (PreEnv cxt)
-askPre = lens preEnv (\x y -> x { preEnv = y})
+instance HasRandom (AppEnv env) where
+  askRandom = lens randSeed (\x y -> x {randSeed = y})
+  {-# INLINE askRandom #-}
 
 data AppEnv cxt = AppEnv
   { name       :: Text    -- ^ Service name.
   , instanceId :: Text    -- ^ Instance id.
   , version    :: Version -- ^ Service version.
   , logF       :: LogFunc
-  , preEnv     :: PreEnv cxt
-  }
-
-data PreEnv cxt = PreEnv
-  { vaultF    :: VaultRef cxt
-  , configure :: Salak
-  , randSeed  :: SMGen -- ^ Random seed
+  , vaultF     :: VaultRef cxt
+  , configure  :: Salak
+  , randSeed   :: SMGen -- ^ Random seed
   }
 
 class HasRandom env where
@@ -79,44 +68,41 @@ instance HasRandom SMGen where
   askRandom = id
   {-# INLINE askRandom #-}
 
-instance HasRandom (PreEnv env) where
-  askRandom = lens randSeed (\x y -> x {randSeed = y})
-  {-# INLINE askRandom #-}
-
-instance HasRandom (AppEnv env) where
-  askRandom = askPre . askRandom
-  {-# INLINE askRandom #-}
-
 class Monad m => MonadRandom env m | m -> env where
   nextW64 :: m Word64
 
-instance HasRandom env => MonadRandom env (Factory n env) where
+instance (HasRandom env, MonadMask n) => MonadRandom env (Factory n env) where
   nextW64 = do
-    env <- get
+    env <- getEnv
     let (w, seed) = nextWord64 $ view askRandom env
-    put $ over askRandom (const seed) env
+    putEnv $ over askRandom (const seed) env
     return w
 
 buildApp :: forall cxt m. (HasLogger cxt, MonadIO m, MonadMask m) => String -> Version -> Factory m () (AppEnv cxt)
 buildApp confName version = do
-  mv <- liftIO $ newMVar []
-  pe <- liftIO $ do
-    randSeed  <- initSMGen
-    configure <- runSalak def
+  mv        <- liftIO $ newMVar []
+  -- Initialize salak
+  configure <- liftIO $ runSalak def
       { configName = confName
       , loggerF = \c s -> modifyMVar_ mv $ return . ((c,s):)
       , loadExt = loadByExt YAML
       } askSourcePack
-    return PreEnv{vaultF = VaultRef $ const id, ..}
-  within pe $ do
-    name       <- fromMaybe (fromString confName) <$> require "application.name"
-    instanceId <- hex32 <$> nextW64
-    logF       <- buildLogger @cxt (name <> "," <> instanceId)
-    let lf c s = runLoggingT (logDebugCS c s :: LoggingT IO ()) (logfunc logF)
-    liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
-    setLogF lf
-    preEnv <- get
-    return AppEnv{..}
+  -- Read application name
+  name      <- within configure
+    $ fromMaybe (fromString confName)
+    <$> require "application.name"
+  -- Generate instanceid
+  (randSeed, instanceId) <- liftIO initSMGen >>> runEnv (hex32 <$> nextW64)
+  -- Initialize logger
+  (vaultF, logF)         <- within (VaultRef $ const id)
+    $ runEnv
+    $ buildLogger configure (name <> "," <> instanceId)
+  -- Consume logs from salak
+  let lf c s = runLoggingT (logDebugCS c s :: LoggingT IO ()) (logfunc logF)
+  liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
+  -- Config new logger to salak
+  within configure $ setLogF lf
+  return AppEnv{..}
 
 hex64 :: IsString a => Word64 -> a
 hex64 i = fromString $ let x = showHex i "" in replicate (16 - length x) '0' ++ x

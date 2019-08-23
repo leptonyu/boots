@@ -14,7 +14,8 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - Boots.Factory
+    - Control.Monad.Factory
+    - Control.Monad.Factory.Class
 
 tests:
   spec:

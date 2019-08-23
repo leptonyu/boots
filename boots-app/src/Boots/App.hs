@@ -1,27 +1,27 @@
 module Boots.App(
     natA
-  , delayA
-  , bracketA
+  , delay
+  , produceA
   , module Boots.App.Internal
   ) where
 
 import           Boots.App.Internal
-import           Boots.Factory
+import           Control.Monad.Factory
 
-natA :: Monad m => Factory (AppT env m) env component -> Factory m env component
+natA :: MonadMask m => Factory (AppT env m) env component -> Factory m env component
 natA fenc = do
-  env <- get
+  env <- getEnv
   natTrans (runAppT env) lift fenc
 {-# INLINE natA #-}
 
-delayA :: MonadMask m => AppT env m () -> Factory m env ()
-delayA app = do
-  env <- get
-  delay $ runAppT env app
-{-# INLINE delayA #-}
+delay :: MonadMask m => AppT env m () -> Factory m env ()
+delay app = do
+  env <- getEnv
+  defer $ runAppT env app
+{-# INLINE delay #-}
 
-bracketA :: MonadMask m => AppT env m res -> (res -> AppT env m ()) -> Factory m env res
-bracketA open close = do
-  env <- get
-  bracket (runAppT env open) (runAppT env . close)
-{-# INLINE bracketA #-}
+produceA :: MonadMask m => AppT env m res -> (res -> AppT env m ()) -> Factory m env res
+produceA open close = do
+  env <- getEnv
+  produce (runAppT env open) (runAppT env . close)
+{-# INLINE produceA #-}

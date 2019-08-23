@@ -1,5 +1,5 @@
 module Boots(
-    module Boots.Factory
+    module Control.Monad.Factory
   , module Boots.App
   , module Boots.Factory.Salak
   , module Boots.Factory.Application
@@ -10,11 +10,11 @@ module Boots(
   ) where
 
 import           Boots.App
-import           Boots.Factory
 import           Boots.Factory.Application
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
+import           Control.Monad.Factory
 
 
 import           Paths_boots_app           (version)

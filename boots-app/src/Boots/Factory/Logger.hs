@@ -19,12 +19,12 @@ module Boots.Factory.Logger(
   ) where
 
 import           Boots.App.Internal
-import           Boots.Factory
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent.MVar
 import           Control.Exception              (SomeException, catch)
 import           Control.Monad
+import           Control.Monad.Factory
 import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Int
@@ -47,9 +47,9 @@ instance HasLogger LogFunc where
   askLogger = id
   {-# INLINE askLogger #-}
 
-instance (MonadIO m, HasLogger env) => MonadLogger (Factory m env) where
+instance (MonadIO m, MonadMask m, HasLogger env) => MonadLogger (Factory m env) where
   monadLoggerLog a b c d = do
-    LogFunc{..} <- gets (view askLogger)
+    LogFunc{..} <- asksEnv (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
   {-# INLINE monadLoggerLog #-}
 
@@ -59,8 +59,8 @@ instance (MonadIO m, HasLogger env) => MonadLogger (AppT env m) where
     liftIO $ logfunc a b c (toLogStr d)
   {-# INLINE monadLoggerLog #-}
 
-instance (MonadIO m, HasLogger env) => MonadLoggerIO (Factory m env) where
-  askLoggerIO = logfunc <$> gets (view askLogger)
+instance (MonadIO m, MonadMask m, HasLogger env) => MonadLoggerIO (Factory m env) where
+  askLoggerIO = logfunc <$> asksEnv (view askLogger)
   {-# INLINE askLoggerIO #-}
 
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
@@ -162,11 +162,10 @@ buildLogger
   :: forall cxt m env
   . ( MonadIO m
     , MonadMask m
-    , HasSalak env
     , HasLogger cxt
     , HasVault cxt env)
-  => Text -> Factory m env LogFunc
-buildLogger name = do
-  lc  <- require "logging"
+  => Salak -> Text -> Factory m env LogFunc
+buildLogger s name = do
+  lc   <- within s $ require "logging"
   modifyVault @cxt $ over askLogger . traceVault
-  bracket (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
+  produce (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)

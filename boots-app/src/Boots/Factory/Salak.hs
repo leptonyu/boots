@@ -7,7 +7,7 @@ module Boots.Factory.Salak(
   ) where
 
 import           Boots.App.Internal
-import           Boots.Factory
+import           Control.Monad.Factory
 import           Lens.Micro
 import           Lens.Micro.Extras
 import           Salak
@@ -20,8 +20,8 @@ instance HasSalak Salak where
   askSalak = id
   {-# INLINE askSalak #-}
 
-instance (HasSalak env, Monad m) => MonadSalak (Factory m env) where
-  askSourcePack = gets (view askSalak)
+instance (HasSalak env, MonadMask m) => MonadSalak (Factory m env) where
+  askSourcePack = asksEnv (view askSalak)
   {-# INLINE askSourcePack #-}
 
 instance (HasSalak env, Monad m) => MonadSalak (AppT env m) where
@@ -29,4 +29,4 @@ instance (HasSalak env, Monad m) => MonadSalak (AppT env m) where
   {-# INLINE askSourcePack #-}
 
 buildSalak :: (MonadIO m, MonadCatch m) => String -> Factory m () Salak
-buildSalak name = offer $ runSalakWithYaml name askSourcePack
+buildSalak name = liftIO $ runSalakWithYaml name askSourcePack

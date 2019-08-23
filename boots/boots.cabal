@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b6396e3409ac4281d8b89253dfc70f4db0fcce371e9436b179ae77039107d85f
+-- hash: f8f5ddbc00c6cf51f10a3aa4dcdfa52780e880d89144cc0fd2daabc477d64393
 
 name:           boots
 version:        0.2
@@ -23,7 +23,8 @@ extra-source-files:
 
 library
   exposed-modules:
-      Boots.Factory
+      Control.Monad.Factory
+      Control.Monad.Factory.Class
   other-modules:
       Paths_boots
   hs-source-dirs:
@@ -40,7 +41,8 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Boots.Factory
+      Control.Monad.Factory
+      Control.Monad.Factory.Class
       Paths_boots
   hs-source-dirs:
       test

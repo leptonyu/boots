@@ -17,18 +17,3 @@ When we decide to create an application using Haskell. We may need using configu
 ## A Project Use boots to Build
 
 Refer to [鬼谷子](https://github.com/leptonyu/guiguzi)
-
-### Have a Try
-
-```Haskell
-factory = do
-  log  <-  logFactory
-  conf <- confFactory
-  within (log, conf) $ do
-    a <- withFactory fst aFactory
-    b <- withFactory snd bFactory
-    polish AB{..}
-      [ xFactory
-      , yFactory
-      ] >>> bootFactory
-```

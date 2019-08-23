@@ -1,14 +1,14 @@
 module Main where
 
-import           Boots.Factory
 import           Control.Concurrent.MVar
 import           Control.Exception       (Exception)
+import           Control.Monad.Factory
 import           Control.Monad.Identity
 import           Test.Hspec
 
 
 main = hspec $ do
-  describe "Boots.Factory" specProperty
+  describe "Control.Monad.Factory" specProperty
 
 
 data TestExp = Failure deriving Show
@@ -27,20 +27,13 @@ specProperty = do
       boot (return $ return ()) `shouldBe` Just ()
     it "boot - Error " $ do
       boot (return $ throwM Failure) `shouldBe` Nothing
-  context "With" $ do
-    it "withFactory" $ do
-      running ('A', True) (withFactory fst $ get >>= \a -> offer (a `shouldBe` 'A'))  return
-      running ('A', True) (withFactory snd $ get >>= \a -> offer (a `shouldBe` True)) return
     it "within" $ do
-      running () (within 'A' $ get >>= \a -> offer (a `shouldBe` 'A')) return
-  context "Polish" $ do
-    it "polish" $ do
-      running () (polish (0 :: Int) (replicate 10 $ withFactory (+1) get)) (shouldBe 10)
+      running () (within 'A' $ getEnv >>= \a -> liftFT (a `shouldBe` 'A')) return
   context "natTrans" $ do
     it "natTrans" $ do
       running () (natTrans runIdentityT IdentityT $ return ()) return `shouldBe` Just ()
   context "Resource" $ do
-    it "bracket" $ do
+    it "produce" $ do
       ref <- newMVar (0 :: Int)
       let
         open = do
@@ -54,8 +47,8 @@ specProperty = do
           b `shouldBe` 2
           return ()
       boot $ do
-        a <- bracket open close
-        offer $ do
+        a <- produce open close
+        liftFT $ do
           a `shouldBe` 0
           b <- swapMVar ref 2
           b `shouldBe` 1
@@ -63,8 +56,8 @@ specProperty = do
     it "bracket - error" $ do
       ref <- newMVar (0 :: Int)
       (`shouldThrow` anyException) $ boot $ do
-        a <- bracket (readMVar ref) (\_ -> throwM Failure)
-        _ <- offer $ do
+        a <- produce (readMVar ref) (\_ -> throwM Failure)
+        _ <- liftFT $ do
           a `shouldBe` 0
           swapMVar ref 1
         return (return ())
