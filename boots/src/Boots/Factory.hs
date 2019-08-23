@@ -71,17 +71,18 @@ module Boots.Factory(
   , MonadThrow(..)
   , MonadCatch
   , MonadMask
-  , MonadReader(..)
-  , asks
+  , MonadState(..)
+  , modify
+  , gets
   , MonadIO(..)
   , lift
   ) where
 
-import qualified Control.Category     as C
-import           Control.Monad.Catch  hiding (bracket)
+import qualified Control.Category    as C
+import           Control.Monad.Catch hiding (bracket)
 import           Control.Monad.Cont
-import           Control.Monad.Reader
-import           Unsafe.Coerce        (unsafeCoerce)
+import           Control.Monad.State
+import           Unsafe.Coerce       (unsafeCoerce)
 #if __GLASGOW_HASKELL__ < 804
 import           Data.Semigroup
 #endif
@@ -90,8 +91,8 @@ import           Data.Semigroup
 -- It is similar to IoC container in oop, @env@ will provide anything to be wanted to generate @component@.
 --
 newtype Factory m env component
-  = Factory { unFactory :: ReaderT env (ContT () m) component }
-  deriving (Functor, Applicative, Monad, MonadReader env, MonadIO)
+  = Factory { unFactory :: StateT env (ContT () m) component }
+  deriving (Functor, Applicative, Monad, MonadState env, MonadIO)
 
 instance MonadThrow m => MonadThrow (Factory m env) where
   {-# INLINE throwM #-}
@@ -100,7 +101,7 @@ instance MonadThrow m => MonadThrow (Factory m env) where
 instance Monad m => MonadCont (Factory m env) where
   {-# INLINE callCC #-}
   callCC a = do
-    env <- ask
+    env <- get
     wrap . running env $ callCC a
 
 instance Semigroup (Factory m env env) where
@@ -109,19 +110,19 @@ instance Semigroup (Factory m env env) where
 
 instance Monoid (Factory m env env) where
   {-# INLINE mempty #-}
-  mempty = ask
+  mempty = get
   {-# INLINE mappend #-}
   mappend = (<>)
 
 instance C.Category (Factory m) where
   {-# INLINE id #-}
-  id  = ask
+  id  = get
   {-# INLINE (.) #-}
   a . b = b >>= (`within` a)
 
 -- | Running the factory.
 running :: env -> Factory m env c -> (c -> m ()) -> m ()
-running env pma = runContT (runReaderT (unFactory pma) env)
+running env pma = runContT (evalStateT (unFactory pma) env)
 {-# INLINE running #-}
 
 -- | Run the application using a specified factory.
@@ -130,7 +131,7 @@ boot factory = running () factory id
 
 -- | Switch factory environment.
 withFactory :: (env' -> env) -> Factory m env component -> Factory m env' component
-withFactory = unsafeCoerce withReaderT
+withFactory = unsafeCoerce withStateT
 {-# INLINE withFactory #-}
 
 -- | Construct factory under @env@, and adapt it to fit another @env'@.
@@ -146,7 +147,7 @@ polish env = within env . mconcat
 -- | Nature transform of one 'Factory' with monad @n@ into another with monad @m@.
 natTrans :: (n () -> m ()) -> (m () -> n ()) -> Factory n env component -> Factory m env component
 natTrans fnm fmn fac = do
-  env <- ask
+  env <- get
   wrap $ \fm -> fnm $ running env fac (fmn . fm)
 {-# INLINE natTrans #-}
 

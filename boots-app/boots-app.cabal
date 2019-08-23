@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f2bf80c716cfbd491f72bb678ab32b7b1b45b4ee69bbc65f1afc07efd1439c0c
+-- hash: 6957f1958f319cedf8c4babb0dd4ae53ae0e26588806445d1f2f3b052794c804
 
 name:           boots-app
-version:        0.1.1.1
+version:        0.2
 synopsis:       Startup factories using IoC monad
 description:    Provide basic factories base on boots.
 category:       Library, Application
@@ -33,11 +33,11 @@ library
       Boots.App.Internal
   hs-source-dirs:
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds TypeApplications
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots >=0.1 && <0.2
+    , boots >=0.2 && <0.3
     , data-default >=0.7.1 && <0.8
     , exceptions >=0.10.2 && <0.11
     , fast-logger >=2.4.16 && <2.5
@@ -68,11 +68,11 @@ test-suite spec
   hs-source-dirs:
       test
       src
-  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds
+  default-extensions: FlexibleInstances MultiParamTypeClasses GeneralizedNewtypeDeriving OverloadedStrings RecordWildCards FlexibleContexts RankNTypes ScopedTypeVariables FunctionalDependencies ConstraintKinds TypeApplications
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots >=0.1 && <0.2
+    , boots >=0.2 && <0.3
     , data-default >=0.7.1 && <0.8
     , exceptions >=0.10.2 && <0.11
     , fast-logger >=2.4.16 && <2.5

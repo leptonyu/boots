@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 module Boots.Factory.Salak(
     HasSalak(..)
   , buildSalak
@@ -20,7 +21,7 @@ instance HasSalak Salak where
   {-# INLINE askSalak #-}
 
 instance (HasSalak env, Monad m) => MonadSalak (Factory m env) where
-  askSourcePack = asks (view askSalak)
+  askSourcePack = gets (view askSalak)
   {-# INLINE askSourcePack #-}
 
 instance (HasSalak env, Monad m) => MonadSalak (AppT env m) where

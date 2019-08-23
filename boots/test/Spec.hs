@@ -29,13 +29,13 @@ specProperty = do
       boot (return $ throwM Failure) `shouldBe` Nothing
   context "With" $ do
     it "withFactory" $ do
-      running ('A', True) (withFactory fst $ ask >>= \a -> offer (a `shouldBe` 'A'))  return
-      running ('A', True) (withFactory snd $ ask >>= \a -> offer (a `shouldBe` True)) return
+      running ('A', True) (withFactory fst $ get >>= \a -> offer (a `shouldBe` 'A'))  return
+      running ('A', True) (withFactory snd $ get >>= \a -> offer (a `shouldBe` True)) return
     it "within" $ do
-      running () (within 'A' $ ask >>= \a -> offer (a `shouldBe` 'A')) return
+      running () (within 'A' $ get >>= \a -> offer (a `shouldBe` 'A')) return
   context "Polish" $ do
     it "polish" $ do
-      running () (polish (0 :: Int) (replicate 10 $ withFactory (+1) ask)) (shouldBe 10)
+      running () (polish (0 :: Int) (replicate 10 $ withFactory (+1) get)) (shouldBe 10)
   context "natTrans" $ do
     it "natTrans" $ do
       running () (natTrans runIdentityT IdentityT $ return ()) return `shouldBe` Just ()

@@ -12,6 +12,8 @@ module Boots.App.Internal(
     AppT
   , App
   , runAppT
+  , MonadReader(..)
+  , asks
   ) where
 
 import           Control.Monad.Catch

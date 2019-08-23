@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
@@ -48,7 +49,7 @@ instance HasLogger LogFunc where
 
 instance (MonadIO m, HasLogger env) => MonadLogger (Factory m env) where
   monadLoggerLog a b c d = do
-    LogFunc{..} <- asks (view askLogger)
+    LogFunc{..} <- gets (view askLogger)
     liftIO $ logfunc a b c (toLogStr d)
   {-# INLINE monadLoggerLog #-}
 
@@ -59,7 +60,7 @@ instance (MonadIO m, HasLogger env) => MonadLogger (AppT env m) where
   {-# INLINE monadLoggerLog #-}
 
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (Factory m env) where
-  askLoggerIO = logfunc <$> asks (view askLogger)
+  askLoggerIO = logfunc <$> gets (view askLogger)
   {-# INLINE askLoggerIO #-}
 
 instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
@@ -120,14 +121,14 @@ newLogger name LogConfig{..} = do
       ft = case file of
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
-  (l,logend) <- newTimedFastLogger tc ft
   logLvl     <- toWritable level
   logKey     <- L.newKey
   logFailM   <- newMVar 0
-  let 
+  (l,logend) <- newTimedFastLogger tc ft
+  let
     logFail = readMVar logFailM
-    logfunc a b c d 
-      = toLogger logLvl ln l a b c d 
+    logfunc a b c d
+      = toLogger logLvl ln l a b c d
       `catch` \(_ :: SomeException) -> modifyMVar_ logFailM (return . (+1))
   return (LogFunc{..})
   where
@@ -158,9 +159,14 @@ addTrace _ _ v = v
 {-# INLINE addTrace #-}
 
 buildLogger
-  :: (MonadIO m, MonadMask m, HasSalak env, HasLogger cxt)
-  => VaultRef cxt -> Text -> Factory m env LogFunc
-buildLogger vf name = do
+  :: forall cxt m env
+  . ( MonadIO m
+    , MonadMask m
+    , HasSalak env
+    , HasLogger cxt
+    , HasVault cxt env)
+  => Text -> Factory m env LogFunc
+buildLogger name = do
   lc  <- require "logging"
-  modifyVaultRef (over askLogger . traceVault) vf
+  modifyVault @cxt $ over askLogger . traceVault
   bracket (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
