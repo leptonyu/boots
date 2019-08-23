@@ -20,17 +20,16 @@ import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent.MVar
 import           Control.Monad.Factory
-import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Maybe
 import           Data.String
-import           Data.Text                      (Text)
+import           Data.Text               (Text)
 import           Data.Tuple
-import           Data.Version                   (Version)
+import           Data.Version            (Version)
 import           Data.Word
 import           Lens.Micro
 import           Lens.Micro.Extras
-import           Numeric                        (showHex)
+import           Numeric                 (showHex)
 import           Salak
 import           Salak.Yaml
 import           System.Random.SplitMix
@@ -109,7 +108,7 @@ buildApp confName version = do
     $ runEnv
     $ buildLogger configure (name <> "," <> instanceId)
   -- Consume logs from salak
-  let lf c s = runLoggingT (logDebugCS c s :: LoggingT IO ()) (logfunc logF)
+  let lf c s = logCS c LevelTrace (toLogStr s) logF
   liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
   -- Config new logger to salak
   within configure $ setLogF lf

@@ -1,8 +1,9 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TypeApplications       #-}
 module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
@@ -11,14 +12,14 @@ module Boots.Factory.Logger(
   , addTrace
   , buildLogger
   -- ** Log Functions
-  , MonadLogger(..)
-  , MonadLoggerIO(..)
-  , runLoggingT
-  , logInfo
+  , logTrace
   , logDebug
-  , logError
+  , logInfo
   , logWarn
-  , logOther
+  , logError
+  , logFatal
+  , logCS
+  , toLogStr
   , LogLevel(..)
   ) where
 
@@ -26,19 +27,29 @@ import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
 import           Control.Concurrent
-import           Control.Exception              (SomeException, catch)
+import           Control.Exception     (SomeException, catch)
 import           Control.Monad
 import           Control.Monad.Factory
-import           Control.Monad.Logger.CallStack
 import           Data.Default
 import           Data.Int
-import           Data.Text                      (Text, toLower, unpack)
-import qualified Data.Vault.Lazy                as L
+import           Data.Text             (Text, toLower, unpack)
+import qualified Data.Vault.Lazy       as L
 import           Data.Word
+import           GHC.Stack
 import           Lens.Micro
 import           Lens.Micro.Extras
 import           Salak
 import           System.Log.FastLogger
+
+
+data LogLevel
+  = LevelTrace
+  | LevelDebug
+  | LevelInfo
+  | LevelWarn
+  | LevelError
+  | LevelFatal
+  deriving (Eq, Ord, Show)
 
 -- | Environment providing a logging function.
 class HasLogger env where
@@ -51,44 +62,27 @@ instance HasLogger LogFunc where
   askLogger = id
   {-# INLINE askLogger #-}
 
-instance (MonadIO m, MonadMask m, HasLogger env) => MonadLogger (Factory m env) where
-  monadLoggerLog a b c d = do
-    LogFunc{..} <- asksEnv (view askLogger)
-    liftIO $ logfunc a b c (toLogStr d)
-  {-# INLINE monadLoggerLog #-}
-
-instance (MonadIO m, HasLogger env) => MonadLogger (AppT env m) where
-  monadLoggerLog a b c d = do
-    LogFunc{..} <- asks (view askLogger)
-    liftIO $ logfunc a b c (toLogStr d)
-  {-# INLINE monadLoggerLog #-}
-
-instance (MonadIO m, MonadMask m, HasLogger env) => MonadLoggerIO (Factory m env) where
-  askLoggerIO = logfunc <$> asksEnv (view askLogger)
-  {-# INLINE askLoggerIO #-}
-
-instance (MonadIO m, HasLogger env) => MonadLoggerIO (AppT env m) where
-  askLoggerIO = logfunc <$> asks (view askLogger)
-  {-# INLINE askLoggerIO #-}
-
 instance FromProp m LogLevel where
   fromProp = readEnum (fromEnumProp.toLower)
     where
+      fromEnumProp "trace" = Right   LevelTrace
       fromEnumProp "debug" = Right   LevelDebug
       fromEnumProp "info"  = Right   LevelInfo
       fromEnumProp "warn"  = Right   LevelWarn
       fromEnumProp "error" = Right   LevelError
+      fromEnumProp "fatal" = Right   LevelFatal
       fromEnumProp u       = Left $ "unknown level: " ++ unpack u
       {-# INLINE fromEnumProp #-}
   {-# INLINE fromProp #-}
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
-toStr LevelDebug     = "DEBUG"
-toStr LevelInfo      = " INFO"
-toStr LevelWarn      = " WARN"
-toStr LevelError     = "ERROR"
-toStr (LevelOther l) = toLogStr l
+toStr LevelTrace = "TRACE"
+toStr LevelDebug = "DEBUG"
+toStr LevelInfo  = " INFO"
+toStr LevelWarn  = " WARN"
+toStr LevelError = "ERROR"
+toStr LevelFatal = "FATAL"
 
 -- | Logger config.
 data LogConfig = LogConfig
@@ -110,13 +104,57 @@ instance MonadIO m => FromProp m LogConfig where
     <*> "level"       .?: level
   {-# INLINE fromProp #-}
 
+
+class (MonadIO m, HasLogger e) => MonadLog e m | m -> e where
+  askLog :: m LogFunc
+
+instance (MonadIO m, HasLogger env) => MonadLog env (AppT env m) where
+  askLog = asks (view askLogger)
+
+instance (MonadIO m, MonadMask m, HasLogger env) => MonadLog env (Factory m env) where
+  askLog = asksEnv (view askLogger)
+
+logTrace :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logTrace s = askLog >>= liftIO . logCS callStack LevelTrace s
+
+logDebug :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logDebug s = askLog >>= liftIO . logCS callStack LevelDebug s
+
+logInfo :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logInfo s = askLog >>= liftIO . logCS callStack LevelInfo s
+
+logWarn :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logWarn s = askLog >>= liftIO . logCS callStack LevelWarn s
+
+logError :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logError s = askLog >>= liftIO . logCS callStack LevelError s
+
+logFatal :: (MonadLog e m, HasCallStack) => LogStr -> m ()
+logFatal s = askLog >>= liftIO . logCS callStack LevelFatal s
+
+{-# INLINE logCS #-}
+logCS :: CallStack -> LogLevel -> LogStr -> LogFunc -> IO ()
+logCS cs ll ls lf = logfunc lf (go $ getCallStack cs) ll ls
+  where
+    {-# INLINE go #-}
+    go ((_,loc):_) = loc
+    go _           = def
+
+
+instance Default SrcLoc where
+  def = SrcLoc
+    "<unknown>"
+    "<unknown>"
+    "<unknown>"
+    0 0 0 0
+
+
 data LogFunc = LogFunc
-  { logfunc :: Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+  { logfunc :: SrcLoc -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
   , logLvl  :: Writable LogLevel
   , logKey  :: L.Key Text
   , logFail :: IO Int64
-  , logChan :: Chan (IO ())
   }
 
 newLogger :: Text -> LogConfig -> IO LogFunc
@@ -129,24 +167,24 @@ newLogger name LogConfig{..} = do
   logLvl     <- toWritable level
   logKey     <- L.newKey
   logFailM   <- newMVar 0
-  logChan    <- newChan
-  _ <- forkIO $ forever $ join $ readChan logChan
-  (l,logend) <- newTimedFastLogger tc ft
+  (logf,logend) <- newFastLogger ft
   let
     logFail = readMVar logFailM
-    logfunc a b c d = writeChan logChan $ toLogger a b c d `catch` catchE
-    catchE (_ :: SomeException) = modifyMVar_ logFailM (return . (+1))
-    toLogger Loc{..} _ ll s = do
+    logfunc src l s = do
       lc <- getWritable logLvl
-      when (lc <= ll) $ l $ \t ->
-        let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
-        in toLogStr t <> " " <> toStr ll <> ln <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
-
+      when (lc <= l)
+        $ (makeLog src l s >>= logf) `catch` \(_ :: SomeException) -> modifyMVar_ logFailM (return . (+1))
+    makeLog SrcLoc{..} l s = do
+      t <- tc
+      let locate = if l <= LevelWarn
+            then ""
+            else " @" <> toLogStr srcLocFile <> toLogStr (show srcLocStartCol)
+      return $ toLogStr t <> " " <> toStr l <> ln <> toLogStr srcLocModule <> locate <> " - " <> s <> "\n"
   return (LogFunc{..})
 
 -- | Add additional trace info into log.
 traceVault :: L.Vault -> LogFunc -> LogFunc
-traceVault v LogFunc{..} = LogFunc { logfunc = \a b c d -> logfunc a b c (go d), .. }
+traceVault v LogFunc{..} = LogFunc { logfunc = \s l -> logfunc s l . go, .. }
   where
     go :: LogStr -> LogStr
     go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ L.lookup logKey v

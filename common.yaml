@@ -8,15 +8,5 @@
   category:            Library, Application
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   default-extensions:
-  #   - FlexibleInstances
-  #   - MultiParamTypeClasses
-  #   - GeneralizedNewtypeDeriving
-  #   - OverloadedStrings
     - RecordWildCards
     - ScopedTypeVariables
-  #   - FlexibleContexts
-  #   - RankNTypes
-  #   - ScopedTypeVariables
-  #   - FunctionalDependencies
-  #   - ConstraintKinds
-  #   - TypeApplications
