@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TypeApplications       #-}
@@ -19,29 +18,34 @@ module Boots.Factory.Logger(
   , logError
   , logFatal
   , logCS
-  , toLogStr
-  , toLogger
+  , ToLogStr(..)
   , LogLevel(..)
+  , levelFromStr
+  , toLogger
+  , L.runLoggingT
   ) where
 
 import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
-import           Control.Concurrent
-import           Control.Exception     (SomeException, catch)
+import           Control.Concurrent            (forkIO)
+import           Control.Concurrent.MVar
+import           Control.Exception             (SomeException, catch, finally)
 import           Control.Monad
 import           Control.Monad.Factory
-import qualified Control.Monad.Logger  as L
+import qualified Control.Monad.Logger          as L
 import           Data.Default
 import           Data.Int
-import           Data.Text             (Text, toLower, unpack)
-import qualified Data.Vault.Lazy       as L
+import           Data.Text                     (Text, toLower, unpack)
+import qualified Data.Vault.Lazy               as L
 import           Data.Word
 import           GHC.Stack
 import           Lens.Micro
 import           Lens.Micro.Extras
 import           Salak
 import           System.Log.FastLogger
+
+import           Control.Concurrent.Chan.Unagi
 
 
 data LogLevel
@@ -65,17 +69,21 @@ instance HasLogger LogFunc where
   {-# INLINE askLogger #-}
 
 instance FromProp m LogLevel where
-  fromProp = readEnum (fromEnumProp.toLower)
-    where
-      fromEnumProp "trace" = Right   LevelTrace
-      fromEnumProp "debug" = Right   LevelDebug
-      fromEnumProp "info"  = Right   LevelInfo
-      fromEnumProp "warn"  = Right   LevelWarn
-      fromEnumProp "error" = Right   LevelError
-      fromEnumProp "fatal" = Right   LevelFatal
-      fromEnumProp u       = Left $ "unknown level: " ++ unpack u
-      {-# INLINE fromEnumProp #-}
+  fromProp = readEnum levelFromStr
   {-# INLINE fromProp #-}
+
+{-# INLINE levelFromStr #-}
+levelFromStr :: Text -> Either String LogLevel
+levelFromStr = go . toLower
+  where
+    {-# INLINE go #-}
+    go "trace" = Right   LevelTrace
+    go "debug" = Right   LevelDebug
+    go "info"  = Right   LevelInfo
+    go "warn"  = Right   LevelWarn
+    go "error" = Right   LevelError
+    go "fatal" = Right   LevelFatal
+    go u       = Left $ "unknown level: " ++ unpack u
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
@@ -93,9 +101,11 @@ data LogConfig = LogConfig
   , maxSize       :: !Word32         -- ^ Max logger file size.
   , rotateHistory :: !Word16         -- ^ Max number of logger files should be reserved.
   , level         :: !(IO LogLevel)    -- ^ Log level to show.
+  , asyncMode     :: !Bool
   }
+
 instance Default LogConfig where
-  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo)
+  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) True
 
 instance MonadIO m => FromProp m LogConfig where
   fromProp = LogConfig
@@ -104,6 +114,7 @@ instance MonadIO m => FromProp m LogConfig where
     <*> "max-size"    .?: maxSize
     <*> "max-history" .?: rotateHistory
     <*> "level"       .?: level
+    <*> "async"       .?: asyncMode
   {-# INLINE fromProp #-}
 
 
@@ -158,10 +169,37 @@ data LogFunc = LogFunc
   , logFail :: IO Int64
   }
 
+data LogEvent = LogEvent
+  { lloc   :: SrcLoc
+  , llevel :: LogLevel
+  , llog   :: LogStr
+  , lname  :: LogStr
+  , lvlvl  :: Writable LogLevel
+  , lfail  :: IO ()
+  , ltime  :: IO FormattedTime
+  , lapp   :: LogStr -> IO ()
+  }
+
+runLog
+  :: LogEvent
+  -> IO ()
+runLog LogEvent{..} = do
+  lc <- getWritable lvlvl
+  when (lc <= llevel)
+    $ (makeLog lloc >>= lapp) `catch` \(_ :: SomeException) -> lfail
+  where
+    {-# INLINE makeLog #-}
+    makeLog SrcLoc{..} = do
+      t <- ltime
+      let locate = if llevel <= LevelWarn
+            then ""
+            else " @" <> toLogStr srcLocFile <> toLogStr (show srcLocStartCol)
+      return $ toLogStr t <> " " <> toStr llevel <> lname <> toLogStr srcLocModule <> locate <> " - " <> llog <> "\n"
+
 toLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()
 toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr
   where
-    g1 = SrcLoc loc_package loc_module loc_filename (fst loc_start) (snd loc_start) (fst loc_end) (snd loc_end)
+    g1 = uncurry (uncurry (SrcLoc loc_package loc_module loc_filename) loc_start) loc_end
     g2 L.LevelDebug     = LevelDebug
     g2 L.LevelInfo      = LevelInfo
     g2 L.LevelWarn      = LevelWarn
@@ -170,27 +208,32 @@ toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr
 
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
-  tc            <- newTimeCache "%Y-%m-%d %T"
-  let ln = " [" <> toLogStr name <> "] "
-      ft = case file of
+  let ft = case file of
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
   logLvl     <- toWritable level
   logKey     <- L.newKey
   logFailM   <- newMVar 0
-  (logf,logend) <- newFastLogger ft
+  (logf,le) <- newFastLogger ft
+  ltime      <- newTimeCache "%Y-%m-%d %T"
+  (execLog,logend) <- if asyncMode
+    then do
+      (rc, wc) <- newChan
+      void $ forkIO $ forever $ readChanOnException wc (>>=runLog) >>= runLog
+      return (writeChan rc, ((getChanContents wc  >>= mapM_ runLog) `catch` (\(_::SomeException) -> return ())) `finally` le)
+    else return (runLog, le)
   let
+    {-# INLINE logFail #-}
     logFail = readMVar logFailM
-    logfunc src l s = do
-      lc <- getWritable logLvl
-      when (lc <= l)
-        $ (makeLog src l s >>= logf) `catch` \(_ :: SomeException) -> modifyMVar_ logFailM (return . (+1))
-    makeLog SrcLoc{..} l s = do
-      t <- tc
-      let locate = if l <= LevelWarn
-            then ""
-            else " @" <> toLogStr srcLocFile <> toLogStr (show srcLocStartCol)
-      return $ toLogStr t <> " " <> toStr l <> ln <> toLogStr srcLocModule <> locate <> " - " <> s <> "\n"
+    {-# INLINE lfail #-}
+    lfail   = modifyMVar_ logFailM (return . (+1))
+    {-# INLINE lname #-}
+    lname = " [" <> toLogStr name <> "] "
+    {-# INLINE logfunc #-}
+    logfunc lloc llevel llog = execLog LogEvent
+      { lvlvl = logLvl
+      , lapp  = logf
+      , ..}
   return (LogFunc{..})
 
 -- | Add additional trace info into log.

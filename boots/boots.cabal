@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4c411218534f7659e0d4c397327932f66ec7eabcb45a679bf2bc670d01641749
+-- hash: f7c53a91b7ff59c797e8d1282268253aec47e32e9c59739fa106745a81b80436
 
 name:           boots
 version:        0.2
@@ -41,16 +41,14 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Control.Monad.Factory
-      Control.Monad.Factory.Class
       Paths_boots
   hs-source-dirs:
       test
-      src
   default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
+    , boots
     , exceptions >=0.10.2 && <0.11
     , hspec
     , mtl >=2.2.2 && <2.3
