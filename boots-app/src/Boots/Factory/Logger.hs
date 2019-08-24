@@ -108,7 +108,7 @@ data LogConfig = LogConfig
   }
 
 instance Default LogConfig where
-  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) False
+  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) True
 
 instance MonadIO m => FromProp m LogConfig where
   fromProp = LogConfig
