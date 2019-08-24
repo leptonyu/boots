@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TupleSections          #-}
 module Boots.Factory.Application(
     HasApp(..)
   , AppEnv(..)
@@ -11,24 +12,26 @@ module Boots.Factory.Application(
   , hex64
   , hex32
   , buildApp
+  , RD(..)
+  , makeIORefRD
   ) where
 
 import           Boots.App.Internal
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
-import           Control.Concurrent.MVar
 import           Control.Monad.Factory
 import           Data.Default
+import           Data.IORef
 import           Data.Maybe
 import           Data.String
-import           Data.Text               (Text)
+import           Data.Text              (Text)
 import           Data.Tuple
-import           Data.Version            (Version)
+import           Data.Version           (Version)
 import           Data.Word
 import           Lens.Micro
 import           Lens.Micro.Extras
-import           Numeric                 (showHex)
+import           Numeric                (showHex)
 import           Salak
 import           Salak.Yaml
 import           System.Random.SplitMix
@@ -76,25 +79,36 @@ instance HasRandom RD where
   {-# INLINE askRandom #-}
 
 class Monad m => MonadRandom env m | m -> env where
-  nextW64 :: m Word64
+  nextW64   :: m Word64
+  nextSplit :: m RD
 
 instance (HasRandom env, MonadMask n, MonadIO n) => MonadRandom env (Factory n env) where
   nextW64 = do
     rd <- asksEnv (view askRandom)
     liftIO $ unRD rd nextWord64
+  nextSplit = do
+    rd <- asksEnv (view askRandom)
+    liftIO $ unRD rd splitSMGen >>= makeIORefRD
 
 instance (HasRandom env, MonadIO n) => MonadRandom env (AppT env n) where
   nextW64 = do
     rd <- asks (view askRandom)
     liftIO $ unRD rd nextWord64
+  nextSplit = do
+    rd <- asks (view askRandom)
+    liftIO $ unRD rd splitSMGen >>= makeIORefRD
+
+{-# INLINE makeIORefRD #-}
+makeIORefRD :: SMGen -> IO RD
+makeIORefRD seed = newIORef seed >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap.f))
 
 buildApp :: forall cxt m. (HasLogger cxt, MonadIO m, MonadMask m) => String -> Version -> Factory m () (AppEnv cxt)
 buildApp confName version = do
-  mv        <- liftIO $ newMVar []
+  mv        <- liftIO $ newIORef []
   -- Initialize salak
   configure <- liftIO $ runSalak def
       { configName = confName
-      , loggerF = \c s -> modifyMVar_ mv $ return . ((c,s):)
+      , loggerF = \c s -> modifyIORef' mv ((c,s):)
       , loadExt = loadByExt YAML
       } askSourcePack
   -- Read application name
@@ -102,9 +116,7 @@ buildApp confName version = do
     $ fromMaybe (fromString confName)
     <$> require "application.name"
   -- Generate instanceid
-  randSeed    <- liftIO $ initSMGen
-    >>= newMVar
-    >>= \ref -> return (RD $ \f -> modifyMVar ref (return . swap . f))
+  randSeed    <- liftIO $ initSMGen >>= makeIORefRD
   instanceId  <- within randSeed $ hex32 <$> nextW64
   -- Initialize logger
   (vaultF, logF)         <- within (VaultRef $ const id)
@@ -112,7 +124,7 @@ buildApp confName version = do
     $ buildLogger configure (name <> "," <> instanceId)
   -- Consume logs from salak
   let lf c s = logCS c LevelTrace (toLogStr s) logF
-  liftIO $ swapMVar mv [] >>= sequence_ . reverse . fmap (uncurry lf)
+  liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)
   -- Config new logger to salak
   within configure $ setLogF lf
   return AppEnv{..}
