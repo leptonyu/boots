@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
@@ -20,32 +22,33 @@ module Boots.Factory.Logger(
   , logCS
   , ToLogStr(..)
   , LogLevel(..)
+  -- ** Reexport log functions
   , levelFromStr
-  , toLogger
+  , toMonadLogger
   , L.runLoggingT
   ) where
 
 import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Factory.Vault
-import           Control.Concurrent            (forkIO)
+import           Control.Concurrent      (forkIO)
+import           Control.Concurrent.Chan
 import           Control.Concurrent.MVar
-import           Control.Exception             (SomeException, catch, finally)
+import           Control.Exception       (SomeException, catch, finally, mask_)
 import           Control.Monad
 import           Control.Monad.Factory
-import qualified Control.Monad.Logger          as L
+import qualified Control.Monad.Logger    as L
 import           Data.Default
 import           Data.Int
-import           Data.Text                     (Text, toLower, unpack)
-import qualified Data.Vault.Lazy               as L
+import           Data.IORef
+import           Data.Text               (Text, toLower, unpack)
+import qualified Data.Vault.Lazy         as L
 import           Data.Word
 import           GHC.Stack
 import           Lens.Micro
 import           Lens.Micro.Extras
 import           Salak
 import           System.Log.FastLogger
-
-import           Control.Concurrent.Chan.Unagi
 
 
 data LogLevel
@@ -105,7 +108,7 @@ data LogConfig = LogConfig
   }
 
 instance Default LogConfig where
-  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) True
+  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) False
 
 instance MonadIO m => FromProp m LogConfig where
   fromProp = LogConfig
@@ -174,19 +177,14 @@ data LogEvent = LogEvent
   , llevel :: LogLevel
   , llog   :: LogStr
   , lname  :: LogStr
-  , lvlvl  :: Writable LogLevel
-  , lfail  :: IO ()
   , ltime  :: IO FormattedTime
-  , lapp   :: LogStr -> IO ()
   }
 
-runLog
-  :: LogEvent
-  -> IO ()
-runLog LogEvent{..} = do
-  lc <- getWritable lvlvl
-  when (lc <= llevel)
-    $ (makeLog lloc >>= lapp) `catch` \(_ :: SomeException) -> lfail
+{-# INLINE runLog #-}
+runLog :: (LogStr -> IO ()) -> Writable LogLevel -> LogEvent -> IO ()
+runLog !lf !logLvl !LogEvent{..} = do
+  lc <- getWritable logLvl
+  when (lc <= llevel) $ makeLog lloc >>= lf
   where
     {-# INLINE makeLog #-}
     makeLog SrcLoc{..} = do
@@ -194,47 +192,65 @@ runLog LogEvent{..} = do
       let locate = if llevel <= LevelWarn
             then ""
             else " @" <> toLogStr srcLocFile <> toLogStr (show srcLocStartCol)
-      return $ toLogStr t <> " " <> toStr llevel <> lname <> toLogStr srcLocModule <> locate <> " - " <> llog <> "\n"
+      return
+        $ toLogStr t
+        <> " "
+        <> toStr llevel
+        <> lname
+        <> toLogStr srcLocModule
+        <> locate
+        <> " - "
+        <> llog
+        <> "\n"
 
-toLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()
-toLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr
-  where
-    g1 = uncurry (uncurry (SrcLoc loc_package loc_module loc_filename) loc_start) loc_end
-    g2 L.LevelDebug     = LevelDebug
-    g2 L.LevelInfo      = LevelInfo
-    g2 L.LevelWarn      = LevelWarn
-    g2 L.LevelError     = LevelError
-    g2 (L.LevelOther _) = LevelTrace
+{-# INLINE asyncLog #-}
+asyncLog
+  :: (LogStr -> IO ())
+  -> Writable LogLevel
+  -> (SomeException -> IO ())
+  -> IO ()
+  -> IO (LogEvent -> IO (), IO ())
+asyncLog lf ll lfail le = do
+  rc <- newChan -- First Channel
+  b  <- newIORef True
+  let
+    {-# INLINE loop #-}
+    loop rr ww = do
+      xb <- readIORef b
+      when xb $ do
+        _ <- readChan rr >>= ww
+        loop rr ww
+    {-# INLINE leftc #-}
+    leftc = mask_ (getChanContents rc >>= mapM_ (runLog lf ll))
+  void $ forkIO $ loop rc (runLog lf ll)
+  return
+    ( writeChan rc
+    , (modifyIORef' b (\_ -> False) >> (catch leftc lfail)) `finally` le
+    )
 
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
-  let ft = case file of
+  (logf,close)  <- newFastLogger $ case file of
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
+  ltime      <- newTimeCache "%Y-%m-%d %T"
   logLvl     <- toWritable level
   logKey     <- L.newKey
   logFailM   <- newMVar 0
-  (logf,le) <- newFastLogger ft
-  ltime      <- newTimeCache "%Y-%m-%d %T"
-  (execLog,logend) <- if asyncMode
-    then do
-      (rc, wc) <- newChan
-      void $ forkIO $ forever $ readChanOnException wc (>>=runLog) >>= runLog
-      return (writeChan rc, ((getChanContents wc  >>= mapM_ runLog) `catch` (\(_::SomeException) -> return ())) `finally` le)
-    else return (runLog, le)
   let
     {-# INLINE logFail #-}
     logFail = readMVar logFailM
     {-# INLINE lfail #-}
-    lfail   = modifyMVar_ logFailM (return . (+1))
+    lfail   = \(_::SomeException) -> modifyMVar_ logFailM (return . (+1))
     {-# INLINE lname #-}
     lname = " [" <> toLogStr name <> "] "
+  (execLog,logend) <- if asyncMode
+    then asyncLog logf logLvl lfail close
+    else return (\e -> runLog logf logLvl e `catch` lfail, close)
+  let
     {-# INLINE logfunc #-}
-    logfunc lloc llevel llog = execLog LogEvent
-      { lvlvl = logLvl
-      , lapp  = logf
-      , ..}
-  return (LogFunc{..})
+    logfunc lloc llevel llog = execLog LogEvent {..}
+  return LogFunc{..}
 
 -- | Add additional trace info into log.
 traceVault :: L.Vault -> LogFunc -> LogFunc
@@ -266,3 +282,17 @@ buildLogger s name = do
   lc   <- within s $ require "logging"
   modifyVault @cxt $ over askLogger . traceVault
   produce (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
+
+
+{-# INLINE toMonadLogger #-}
+toMonadLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()
+toMonadLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr
+  where
+    {-# INLINE g1 #-}
+    g1 = uncurry (uncurry (SrcLoc loc_package loc_module loc_filename) loc_start) loc_end
+    {-# INLINE g2 #-}
+    g2 L.LevelDebug     = LevelDebug
+    g2 L.LevelInfo      = LevelInfo
+    g2 L.LevelWarn      = LevelWarn
+    g2 L.LevelError     = LevelError
+    g2 (L.LevelOther _) = LevelTrace

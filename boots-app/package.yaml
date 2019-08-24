@@ -36,7 +36,6 @@ library:
     - splitmix      >= 0.0.3  && < 0.1
     - vault         >= 0.3.1  && < 0.4
     - monad-logger  >= 0.3.30 && < 0.4
-    - unagi-chan    >= 0.4.1  && < 0.5
 
 executables:
   demo:
@@ -45,6 +44,7 @@ executables:
     main: Main.hs
     dependencies:
     - boots-app
+    - time
 
 # tests:
 #   spec:
