@@ -30,7 +30,7 @@ module Boots.Factory.Logger(
 
 import           Boots.App.Internal
 import           Boots.Factory.Salak
-import           Boots.Factory.Vault
+import           Boots.Vault
 import           Control.Concurrent      (forkIO)
 import           Control.Concurrent.Chan
 import           Control.Concurrent.MVar
@@ -168,8 +168,8 @@ data LogFunc = LogFunc
   { logfunc :: SrcLoc -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
   , logLvl  :: Writable LogLevel
-  , logKey  :: L.Key Text
   , logFail :: IO Int64
+  , logVal  :: VaultVal (Maybe Text)
   }
 
 data LogEvent = LogEvent
@@ -235,8 +235,8 @@ newLogger name LogConfig{..} = do
         _      -> LogStdout $ fromIntegral bufferSize
   ltime      <- newTimeCache "%Y-%m-%d %T"
   logLvl     <- toWritable level
-  logKey     <- L.newKey
   logFailM   <- newMVar 0
+  logVal     <- newVaultVal Nothing
   let
     {-# INLINE logFail #-}
     logFail = readMVar logFailM
@@ -257,32 +257,28 @@ traceVault :: L.Vault -> LogFunc -> LogFunc
 traceVault v LogFunc{..} = LogFunc { logfunc = \s l -> logfunc s l . go, .. }
   where
     go :: LogStr -> LogStr
-    go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ L.lookup logKey v
+    go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ readVault logVal v
     {-# INLINE go #-}
 {-# INLINE traceVault #-}
 
 -- | Add additional trace info into log.
 addTrace :: Maybe Text -> LogFunc -> L.Vault -> L.Vault
 addTrace (Just msg) LogFunc{..} v =
-  let mt = L.lookup logKey v
+  let mt = readVault logVal v
   in case mt of
-    Just m -> L.insert logKey (m <> "," <> msg) v
-    _      -> L.insert logKey msg v
+    Just m -> writeVault logVal (Just $ m <> "," <> msg) v
+    _      -> writeVault logVal (Just msg) v
 addTrace _ _ v = v
 {-# INLINE addTrace #-}
 
 buildLogger
-  :: forall cxt m env
-  . ( MonadIO m
+  :: ( MonadIO m
     , MonadMask m
-    , HasLogger cxt
-    , HasVault cxt env)
-  => Salak -> Text -> Factory m env LogFunc
-buildLogger s name = do
-  lc   <- within s $ require "logging"
-  modifyVault @cxt $ over askLogger . traceVault
+    , HasSalak env)
+  => Text -> Factory m env LogFunc
+buildLogger name = do
+  lc   <- require "logging"
   produce (liftIO $ newLogger name lc) (\LogFunc{..} -> liftIO logend)
-
 
 {-# INLINE toMonadLogger #-}
 toMonadLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()

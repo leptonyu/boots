@@ -14,10 +14,11 @@ library:
   exposed-modules:
     - Boots
     - Boots.App
+    - Boots.Vault
+    - Boots.Random 
     - Boots.Factory.Salak
     - Boots.Factory.Application
     - Boots.Factory.Logger
-    - Boots.Factory.Vault
   other-modules:
     - Boots.App.Internal
     - Paths_boots_app

@@ -1,10 +1,11 @@
 module Boots(
     module Control.Monad.Factory
   , module Boots.App
+  , module Boots.Vault
+  , module Boots.Random
   , module Boots.Factory.Salak
   , module Boots.Factory.Application
   , module Boots.Factory.Logger
-  , module Boots.Factory.Vault
 
   -- * Reexport
   , rightToMaybe
@@ -22,7 +23,8 @@ import           Boots.App
 import           Boots.Factory.Application
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
-import           Boots.Factory.Vault
+import           Boots.Random
+import           Boots.Vault
 import           Control.Monad.Factory
 
 import           Data.Default

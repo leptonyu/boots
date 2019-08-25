@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 91d2e9cc24d1d9d1da798e7ea8655fd01a9e558f307a818b822a77962fba6bff
+-- hash: b5fd3e02075731310711c49fc5383405f2970d84364fe39d1796df290bdec856
 
 name:           boots-app
 version:        0.2
@@ -25,10 +25,11 @@ library
   exposed-modules:
       Boots
       Boots.App
+      Boots.Vault
+      Boots.Random
       Boots.Factory.Salak
       Boots.Factory.Application
       Boots.Factory.Logger
-      Boots.Factory.Vault
   other-modules:
       Boots.App.Internal
       Paths_boots_app
