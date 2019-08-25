@@ -15,7 +15,7 @@ library:
     - Boots
     - Boots.App
     - Boots.Vault
-    - Boots.Random 
+    - Boots.Random
     - Boots.Factory.Salak
     - Boots.Factory.Application
     - Boots.Factory.Logger

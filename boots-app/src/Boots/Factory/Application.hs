@@ -26,23 +26,23 @@ import           Salak
 import           Salak.Yaml
 import           System.Random.SplitMix
 
-class HasApp cxt env | env -> cxt where
-  askApp :: Lens' env (AppEnv cxt)
+class HasApp env where
+  askApp :: Lens' env AppEnv
 
-instance HasApp cxt (AppEnv cxt) where
+instance HasApp AppEnv where
   askApp = id
   {-# INLINE askApp #-}
-instance HasLogger (AppEnv cxt) where
+instance HasLogger AppEnv where
   askLogger = lens logF (\x y -> x {logF = y})
   {-# INLINE askLogger #-}
-instance HasSalak (AppEnv cxt) where
+instance HasSalak AppEnv where
   askSalak = lens configure (\x y -> x {configure = y})
   {-# INLINE askSalak #-}
-instance HasRandom (AppEnv env) where
+instance HasRandom AppEnv where
   askRandom = lens randSeed (\x y -> x {randSeed = y})
   {-# INLINE askRandom #-}
 
-data AppEnv cxt = AppEnv
+data AppEnv = AppEnv
   { name       :: Text    -- ^ Service name.
   , instanceId :: Text    -- ^ Instance id.
   , version    :: Version -- ^ Service version.
@@ -51,7 +51,7 @@ data AppEnv cxt = AppEnv
   , randSeed   :: VaultVal RD -- ^ Random seed
   }
 
-buildApp :: forall cxt m. (HasLogger cxt, MonadIO m, MonadMask m) => String -> Version -> Factory m () (AppEnv cxt)
+buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
 buildApp confName version = do
   mv        <- liftIO $ newIORef []
   -- Initialize salak
