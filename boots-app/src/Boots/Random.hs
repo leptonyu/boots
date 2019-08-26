@@ -16,14 +16,14 @@ module Boots.Random(
   ) where
 
 import           Boots.App.Internal
-import           Control.Concurrent.MVar
 import           Control.Monad.Factory
+import           Data.IORef
 import           Data.String
 import           Data.Tuple
 import           Data.Word
 import           Lens.Micro
 import           Lens.Micro.Extras
-import           Numeric                 (showHex)
+import           Numeric                (showHex)
 import           System.Random.SplitMix
 
 data RD = RD { unRD :: forall a. (SMGen -> (a, SMGen)) -> IO a }
@@ -41,7 +41,7 @@ newRD = initSMGen >>= makeRD
 
 {-# INLINE makeRD #-}
 makeRD :: SMGen -> IO RD
-makeRD seed = newMVar seed >>= \ref -> return (RD $ \f -> modifyMVar ref (return . swap . f))
+makeRD seed = newIORef seed >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap . f))
 
 {-# INLINE forkRD #-}
 forkRD :: RD -> IO RD

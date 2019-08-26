@@ -22,11 +22,12 @@ buildTrace
   :: forall env context n
   . ( HasLogger env
     , HasRandom env
+    , HasSalak env
     , HasContextEntry context env
     , MonadMask n
     , MonadIO n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
-buildTrace _ _ = do
+buildTrace _ _ = tryBuildByKey True "web.trace.enabled" $ do
   env <- askEnv
   registerMiddleware $ \app req resH -> do
     let x64 = runVault env (vault req) $ hex64 <$> nextW64 :: IO ByteString

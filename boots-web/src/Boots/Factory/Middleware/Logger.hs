@@ -19,11 +19,12 @@ import           Network.Wai
 buildWebLogger
   :: forall context env n
   . ( HasLogger env
+    , HasSalak env
     , HasContextEntry context env
     , MonadIO n
     , MonadMask n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
-buildWebLogger _ _ = do
+buildWebLogger _ _ = tryBuildByKey True "web.log.enabled" $ do
   env <- askEnv
   registerMiddleware $ \app req resH -> app req
     $ \res -> do
@@ -32,7 +33,7 @@ buildWebLogger _ _ = do
 
 {-# INLINE toLog #-}
 toLog :: HasLogger env => Request -> Status -> App env ()
-toLog req Status{..} =
+toLog ~req Status{..} =
   let {-# INLINE g #-}
       g (Just i) = " \"" <> toLogStr i <> "\""
       g _        = " \"\""

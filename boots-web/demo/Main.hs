@@ -21,7 +21,8 @@ main = boot $ do
     logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
     let
       c = newWebEnv
-        (app :. EmptyContext)
+         app
+         (:. EmptyContext)
          conf :: WebEnv AppEnv '[AppEnv]
       pe = Proxy @AppEnv
       pc = Proxy @'[AppEnv]

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b0ef0b779ff000231a2a7c31e18a4153a6b860434feb1e3463eaee49df5de410
+-- hash: aca0f4300c25b86eb1aef853a46fcc234dc6462d72797ad1590160b88e526a4a
 
 name:           boots-web
 version:        0.2
@@ -24,7 +24,6 @@ library
   exposed-modules:
       Boots.Web
       Boots.Factory.Web
-      Boots.Factory.Middleware
       Boots.Factory.Middleware.Random
       Boots.Factory.Middleware.Error
       Boots.Factory.Middleware.Logger

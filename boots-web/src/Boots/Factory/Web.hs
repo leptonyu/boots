@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -53,9 +54,11 @@ data WebConfig = WebConfig
   } deriving (Eq, Show)
 
 instance Default WebConfig where
+  {-# INLINE def #-}
   def = WebConfig "localhost" 8888
 
 instance FromProp m WebConfig where
+  {-# INLINE fromProp #-}
   fromProp = WebConfig
     <$> "host" .?: hostname
     <*> "port" .?: port
@@ -64,23 +67,36 @@ data WebEnv env context = WebEnv
   { serveW     :: forall api. HasServer api context
                => Proxy api -> Context context -> Server api -> Application
   , middleware :: Middleware
-  , context    :: Context context
+  , envs       :: env
+  , context    :: env -> Context context
   , config     :: WebConfig
   }
 
+{-# INLINE askEnv' #-}
+askEnv' :: Lens' (WebEnv env context) env
+askEnv' = lens envs (\x y -> x { envs = y})
+
+instance HasSalak env => HasSalak (WebEnv env context) where
+  {-# INLINE askSalak #-}
+  askSalak = askEnv' . askSalak
+
+instance HasLogger env => HasLogger (WebEnv env context) where
+  {-# INLINE askLogger #-}
+  askLogger = askEnv' . askLogger
+
+{-# INLINE newWebEnv #-}
 newWebEnv
   :: (HasContextEntry context env, HasLogger env)
-  => Context context -> WebConfig ->  WebEnv env context
+  => env -> (env -> Context context) -> WebConfig ->  WebEnv env context
 newWebEnv = WebEnv serveWithContext id
 
 {-# INLINE registerMiddleware #-}
 registerMiddleware :: MonadMask n => Middleware -> Factory n (WebEnv env context) ()
 registerMiddleware md = modifyEnv $ \web -> web { middleware = md . middleware web }
 
-
 {-# INLINE askEnv #-}
-askEnv :: (MonadMask n, HasContextEntry context env) => Factory n (WebEnv env context) env
-askEnv = getContextEntry . context <$> getEnv
+askEnv :: MonadMask n => Factory n (WebEnv env context) env
+askEnv = envs <$> getEnv
 
 {-# NOINLINE keyEnv #-}
 keyEnv :: L.Key ()
@@ -105,22 +121,21 @@ buildWeb
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) (IO ())
 buildWeb _ _ = do
   (WebEnv{..} :: WebEnv env context) <- getEnv
-  let fenv = getContextEntry context :: env
-  within fenv $ do
+  within envs $ do
     AppEnv{..}        <- asksEnv (view askApp)
     let portText = fromString (show $ port config)
         serveWarp WebConfig{..} = runSettings
           $ defaultSettings
           & setPort (fromIntegral port)
           & setOnExceptionResponse whenException
-          & setOnException (\mreq -> runVault fenv (maybe L.empty vault mreq) . logException)
+          & setOnException (\mreq -> runVault envs (maybe L.empty vault mreq) . logException)
     logInfo $ "Service started on port(s): " <> portText
     delay $ logInfo "Service ended"
     return
       $ serveWarp config
-      $ (\app req -> app req {vault = L.insert (unsafeCoerce keyEnv) fenv $ vault req})
+      $ (\app req -> app req {vault = L.insert (unsafeCoerce keyEnv) envs $ vault req})
       $ middleware
-      $ serveW (Proxy @EmptyAPI) context emptyServer
+      $ serveW (Proxy @EmptyAPI) (context envs) emptyServer
 
 {-# INLINE logException #-}
 logException :: HasLogger env => SomeException -> App env ()
