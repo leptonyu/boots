@@ -14,6 +14,7 @@ module Boots.App.Internal(
     AppT
   , App
   , runAppT
+  , withAppT
   , MonadReader(..)
   , asks
   ) where
@@ -22,6 +23,7 @@ import           Control.Monad.Catch
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Reader
 import           Data.Menshen
+import           Unsafe.Coerce           (unsafeCoerce)
 
 -- | Application monad transformation.
 newtype AppT cxt m a = AppT { unAppT :: ReaderT cxt m a }
@@ -34,6 +36,10 @@ type App cxt = AppT cxt IO
 runAppT :: cxt -> AppT cxt m a -> m a
 runAppT cxt ma = runReaderT (unAppT ma) cxt
 {-# INLINE runAppT #-}
+
+withAppT :: (cxt -> cxt) -> AppT cxt m a -> AppT cxt m a
+withAppT = unsafeCoerce withReaderT
+{-# INLINE withAppT #-}
 
 instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
   {-# INLINE askUnliftIO #-}

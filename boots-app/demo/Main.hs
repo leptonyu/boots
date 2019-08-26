@@ -9,7 +9,7 @@ import           Paths_boots_app (version)
 
 main :: IO ()
 main = running () (buildApp "demo" Paths_boots_app.version) $
-  \(e :: AppEnv LogFunc) -> runAppT e $ do
+  \e -> runAppT e $ do
     count <- fromMaybe 1 <$> require "count"
     t0 <- liftIO getCurrentTime
     replicateM_ count $ logInfo "hello"

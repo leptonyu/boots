@@ -50,9 +50,11 @@ module Control.Monad.Factory(
   , boot
   -- ** With
   , within
+  , withFactory
   , wrap
   , liftFT
   , natTrans
+  , tryBuild
   -- * Reexport Function
   -- ** Category Arrow
   , (C.>>>)
@@ -119,6 +121,13 @@ within :: env -> Factory m env component -> Factory m env' component
 within env = Factory . lift . (`evalStateT` env) . unFactory
 {-# INLINE within #-}
 
+-- | Construct factory under @env@, and adapt it to fit another @env'@.
+withFactory :: (env' -> env) -> Factory m env component -> Factory m env' component
+withFactory f (Factory ma) = do
+  env <- get
+  Factory (lift $ evalStateT ma (f env))
+{-# INLINE withFactory #-}
+
 -- | Wrap raw procedure into a 'Factory'.
 wrap :: ((c -> m ()) -> m ()) -> Factory m env c
 wrap = Factory . lift . ContT
@@ -135,3 +144,7 @@ natTrans fnm fmn fac = do
   env <- get
   wrap $ \fm -> fnm $ running env fac (fmn . fm)
 {-# INLINE natTrans #-}
+
+{-# INLINE tryBuild #-}
+tryBuild :: Bool -> Factory n env () -> Factory n env ()
+tryBuild b p = if b then p else return ()

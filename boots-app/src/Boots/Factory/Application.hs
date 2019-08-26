@@ -13,7 +13,6 @@ module Boots.Factory.Application(
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Random
-import           Boots.Vault
 import           Control.Monad.Factory
 import           Data.Default
 import           Data.IORef
@@ -48,7 +47,7 @@ data AppEnv = AppEnv
   , version    :: Version -- ^ Service version.
   , logF       :: LogFunc
   , configure  :: Salak
-  , randSeed   :: VaultVal RD -- ^ Random seed
+  , randSeed   :: RD -- ^ Random seed
   }
 
 buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
@@ -65,7 +64,7 @@ buildApp confName version = do
     $ fromMaybe (fromString confName)
     <$> require "application.name"
   -- Generate instanceid
-  randSeed    <- liftIO $ initSMGen >>= makeIORefRD >>= newVaultVal
+  randSeed    <- liftIO $ initSMGen >>= makeIORefRD
   instanceId  <- within randSeed  $ hex32 <$> nextW64
   -- Initialize logger
   logF        <- within configure $ buildLogger (name <> "," <> instanceId)

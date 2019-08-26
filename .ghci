@@ -1,0 +1,2 @@
+import System.Environment
+setEnv "logging.level" "trace"

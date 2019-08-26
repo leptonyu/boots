@@ -9,7 +9,6 @@ module Boots.Factory.Logger(
     HasLogger(..)
   , LogConfig(..)
   , LogFunc(..)
-  , traceVault
   , addTrace
   , buildLogger
   -- ** Log Functions
@@ -30,7 +29,6 @@ module Boots.Factory.Logger(
 
 import           Boots.App.Internal
 import           Boots.Factory.Salak
-import           Boots.Vault
 import           Control.Concurrent      (forkIO)
 import           Control.Concurrent.Chan
 import           Control.Concurrent.MVar
@@ -42,7 +40,6 @@ import           Data.Default
 import           Data.Int
 import           Data.IORef
 import           Data.Text               (Text, toLower, unpack)
-import qualified Data.Vault.Lazy         as L
 import           Data.Word
 import           GHC.Stack
 import           Lens.Micro
@@ -169,7 +166,6 @@ data LogFunc = LogFunc
   , logend  :: IO ()
   , logLvl  :: Writable LogLevel
   , logFail :: IO Int64
-  , logVal  :: VaultVal (Maybe Text)
   }
 
 data LogEvent = LogEvent
@@ -236,7 +232,6 @@ newLogger name LogConfig{..} = do
   ltime      <- newTimeCache "%Y-%m-%d %T"
   logLvl     <- toWritable level
   logFailM   <- newMVar 0
-  logVal     <- newVaultVal Nothing
   let
     {-# INLINE logFail #-}
     logFail = readMVar logFailM
@@ -253,22 +248,8 @@ newLogger name LogConfig{..} = do
   return LogFunc{..}
 
 -- | Add additional trace info into log.
-traceVault :: L.Vault -> LogFunc -> LogFunc
-traceVault v LogFunc{..} = LogFunc { logfunc = \s l -> logfunc s l . go, .. }
-  where
-    go :: LogStr -> LogStr
-    go d = maybe d (\p -> "[" <> toLogStr p <> "] " <> d) $ readVault logVal v
-    {-# INLINE go #-}
-{-# INLINE traceVault #-}
-
--- | Add additional trace info into log.
-addTrace :: Maybe Text -> LogFunc -> L.Vault -> L.Vault
-addTrace (Just msg) LogFunc{..} v =
-  let mt = readVault logVal v
-  in case mt of
-    Just m -> writeVault logVal (Just $ m <> "," <> msg) v
-    _      -> writeVault logVal (Just msg) v
-addTrace _ _ v = v
+addTrace :: ToLogStr msg => msg -> LogFunc -> LogFunc
+addTrace v LogFunc{..} = LogFunc { logfunc = \a b c -> logfunc a b ("[" <> toLogStr v <> "] " <> c) , .. }
 {-# INLINE addTrace #-}
 
 buildLogger

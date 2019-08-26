@@ -7,13 +7,13 @@ module Boots.Random(
     RD(..)
   , HasRandom(..)
   , makeIORefRD
+  , forkRD
   , MonadRandom(..)
   , hex32
   , hex64
   ) where
 
 import           Boots.App.Internal
-import           Boots.Vault
 import           Control.Monad.Factory
 import           Data.IORef
 import           Data.String
@@ -27,15 +27,19 @@ import           System.Random.SplitMix
 data RD = RD { unRD :: forall a. (SMGen -> (a, SMGen)) -> IO a }
 
 class HasRandom env where
-  askRandom :: Lens' env (VaultVal RD)
+  askRandom :: Lens' env RD
 
-instance HasRandom (VaultVal RD) where
+instance HasRandom RD where
   askRandom = id
   {-# INLINE askRandom #-}
 
 {-# INLINE makeIORefRD #-}
 makeIORefRD :: SMGen -> IO RD
 makeIORefRD seed = newIORef seed >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap.f))
+
+{-# INLINE forkRD #-}
+forkRD :: RD -> IO RD
+forkRD (RD f) = f splitSMGen >>= makeIORefRD
 
 class Monad m => MonadRandom env m | m -> env where
   nextW64   :: m Word64
@@ -52,19 +56,15 @@ hex32 i = fromString $ let x = showHex i "" in drop 8 $ replicate (16 - length x
 instance (HasRandom env, MonadMask n, MonadIO n) => MonadRandom env (Factory n env) where
   nextW64 = do
     rd <- asksEnv (view askRandom)
-    liftIO $ unRD (readVaultDef rd) nextWord64
+    liftIO $ unRD rd nextWord64
   {-# INLINE nextW64 #-}
-  nextSplit = do
-    rd <- asksEnv (view askRandom)
-    liftIO $ unRD (readVaultDef rd) splitSMGen >>= makeIORefRD
+  nextSplit = asksEnv (view askRandom) >>= liftIO . forkRD
   {-# INLINE nextSplit #-}
 
-instance (HasVault env, HasRandom env, MonadIO n) => MonadRandom env (AppT env n) where
+instance (HasRandom env, MonadIO n) => MonadRandom env (AppT env n) where
   nextW64 = do
     rd <- asks (view askRandom)
-    liftIO $ unRD (readVaultDef rd) nextWord64
+    liftIO $ unRD rd nextWord64
   {-# INLINE nextW64 #-}
-  nextSplit = do
-    rd <- asks (view askRandom)
-    liftIO $ unRD (readVaultDef rd) splitSMGen >>= makeIORefRD
+  nextSplit = asks (view askRandom) >>= liftIO . forkRD
   {-# INLINE nextSplit #-}

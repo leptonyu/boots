@@ -1,0 +1,53 @@
+_common: !include "../common.yaml"
+name:                boots-web
+synopsis:            Web factories.
+description:         Provide web factories base on boots.
+<<: *legal
+extra-source-files:
+- README.md
+
+dependencies:
+  - base          >= 4.10   && < 5
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Boots.Web
+    - Boots.Factory.Web
+    - Boots.Factory.Middleware.Random
+    - Boots.Factory.Middleware.Error 
+    - Boots.Factory.Middleware.Logger 
+    - Boots.Factory.Middleware.Trace
+  other-modules:
+    - Paths_boots_web
+  dependencies:
+    - boots
+    - boots-app
+    - wai
+    - warp
+    - http-types
+    - text
+    - vault
+    - salak
+    - swagger2
+    - servant-server
+    # - servant-swagger
+
+executables:
+  demo-web:
+    source-dirs:  demo
+    ghc-options: -rtsopts -threaded -with-rtsopts=-K1K
+    main: Main.hs
+    dependencies:
+    - boots-web
+    - boots-app
+    - time
+
+# tests:
+#   spec:
+#     main: Spec.hs
+#     source-dirs:
+#       - test
+#       - src
+#     dependencies:
+#       - hspec == 2.*

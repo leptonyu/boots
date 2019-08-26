@@ -14,7 +14,6 @@ library:
   exposed-modules:
     - Boots
     - Boots.App
-    - Boots.Vault
     - Boots.Random
     - Boots.Factory.Salak
     - Boots.Factory.Application
@@ -35,7 +34,6 @@ library:
     - salak         >= 0.3.5  && < 0.4
     - salak-yaml    >= 0.3.5  && < 0.4
     - splitmix      >= 0.0.3  && < 0.1
-    - vault         >= 0.3.1  && < 0.4
     - monad-logger  >= 0.3.30 && < 0.4
 
 executables:

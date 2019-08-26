@@ -3,6 +3,7 @@ resolver: nightly-2019-08-24
 packages:
 - boots
 - boots-app
+- boots-web
 
 ghc-options:
   "$locals": -ddump-to-file -ddump-hi

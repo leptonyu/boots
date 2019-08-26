@@ -29,6 +29,8 @@ specProperty = do
       boot (return $ throwM Failure) `shouldBe` Nothing
     it "within" $ do
       running () (within 'A' $ getEnv >>= \a -> liftFT (a `shouldBe` 'A')) return
+    it "modify" $ do
+      running () (within 'A' $ putEnv 'B' >> getEnv >>= \a -> liftFT (a `shouldBe` 'B')) return
   context "natTrans" $ do
     it "natTrans" $ do
       running () (natTrans runIdentityT IdentityT $ return ()) return `shouldBe` Just ()
