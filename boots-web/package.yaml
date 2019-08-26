@@ -14,6 +14,8 @@ library:
   exposed-modules:
     - Boots.Web
     - Boots.Factory.Web
+    - Boots.Factory.Middleware
+
     - Boots.Factory.Middleware.Random
     - Boots.Factory.Middleware.Error 
     - Boots.Factory.Middleware.Logger 
@@ -23,14 +25,17 @@ library:
   dependencies:
     - boots
     - boots-app
-    - wai
-    - warp
-    - http-types
-    - text
-    - vault
-    - salak
-    - swagger2
-    - servant-server
+    - bytestring     >= 0.10.8 && < 0.11
+    - time           >= 1.8.0  && < 1.9
+    - text           >= 1.2.3  && < 1.3
+    - salak          >= 0.3.5  && < 0.4
+    - vault          >= 0.3.1  && < 0.4
+    - http-types     >= 0.12.3 && < 0.13
+    - servant-server >= 0.16.2 && < 0.17
+    - wai            >= 3.2.2  && < 3.3
+    - warp           >= 3.3.0  && < 3.4
+    - swagger2       >= 2.4    && < 2.5
+    - monad-logger   >= 0.3.30 && < 0.4
     # - servant-swagger
 
 executables:
@@ -42,6 +47,7 @@ executables:
     - boots-web
     - boots-app
     - time
+    - servant-server
 
 # tests:
 #   spec:

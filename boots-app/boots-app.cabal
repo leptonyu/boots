@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 705302283ed1fd94ad361adcfcd0addfdd8441beba7d03aa6f04d03addf592e2
+-- hash: fb9c1bc5b22a2bf797e6bbd57ea5881e2c498aadaa2c501723fa1c500d9ccb49
 
 name:           boots-app
 version:        0.2
@@ -26,6 +26,7 @@ library
       Boots
       Boots.App
       Boots.Random
+      Boots.Vault
       Boots.Factory.Salak
       Boots.Factory.Application
       Boots.Factory.Logger
@@ -38,19 +39,19 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots >=0.2 && <0.3
+    , boots
     , data-default >=0.7.1 && <0.8
     , exceptions >=0.10.2 && <0.11
     , fast-logger >=2.4.16 && <2.5
     , menshen >=0.0.3 && <0.1
     , microlens >=0.4.10 && <0.5
-    , monad-logger >=0.3.30 && <0.4
     , mtl >=2.2.2 && <2.3
     , salak >=0.3.5 && <0.4
     , salak-yaml >=0.3.5 && <0.4
     , splitmix >=0.0.3 && <0.1
     , text >=1.2.3 && <1.3
     , unliftio-core >=0.1.2 && <0.2
+    , vault >=0.3.1 && <0.4
   default-language: Haskell2010
 
 executable demo

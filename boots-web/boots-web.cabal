@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 417d39d336cbd1a7210dbb3efac423830a76e6c6e0feec7aa7168e9b528e8f61
+-- hash: b0ef0b779ff000231a2a7c31e18a4153a6b860434feb1e3463eaee49df5de410
 
 name:           boots-web
 version:        0.2
@@ -24,6 +24,7 @@ library
   exposed-modules:
       Boots.Web
       Boots.Factory.Web
+      Boots.Factory.Middleware
       Boots.Factory.Middleware.Random
       Boots.Factory.Middleware.Error
       Boots.Factory.Middleware.Logger
@@ -38,14 +39,17 @@ library
       base >=4.10 && <5
     , boots
     , boots-app
-    , http-types
-    , salak
-    , servant-server
-    , swagger2
-    , text
-    , vault
-    , wai
-    , warp
+    , bytestring >=0.10.8 && <0.11
+    , http-types >=0.12.3 && <0.13
+    , monad-logger >=0.3.30 && <0.4
+    , salak >=0.3.5 && <0.4
+    , servant-server >=0.16.2 && <0.17
+    , swagger2 >=2.4 && <2.5
+    , text >=1.2.3 && <1.3
+    , time >=1.8.0 && <1.9
+    , vault >=0.3.1 && <0.4
+    , wai >=3.2.2 && <3.3
+    , warp >=3.3.0 && <3.4
   default-language: Haskell2010
 
 executable demo-web
@@ -60,5 +64,6 @@ executable demo-web
       base >=4.10 && <5
     , boots-app
     , boots-web
+    , servant-server
     , time
   default-language: Haskell2010

@@ -11,11 +11,13 @@ import           Network.Wai
 {-# INLINE buildError #-}
 buildError
   :: forall context env n
-  . ( HasLogger env
+  . ( HasContextEntry context env
+    , HasLogger env
     , MonadMask n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
 buildError _ _ = do
-  registerMiddleware "ErrorReport" $ \webNT app req resH -> app req resH `catch`
+  env <- askEnv
+  registerMiddleware $ \app req resH -> app req resH `catch`
     \e -> do
-      unNT webNT (vault req) $ logException e
+      runVault env (vault req) $ logException e
       resH (whenException e)

@@ -14,11 +14,12 @@ module Boots.Factory.Web(
     buildWeb
   , WebConfig(..)
   , WebEnv(..)
-  , WebNT(..)
   , newWebEnv
   , registerMiddleware
-  , registerVault
+  , askEnv
   , tryServe
+  , runVault
+  , modifyVault
   , HasContextEntry(..)
   , Context(..)
   , Vault
@@ -42,6 +43,8 @@ import           Network.Wai.Handler.Warp
 import           Salak
 import           Servant
 import           Servant.Server.Internal.ServerError (responseServerError)
+import           System.IO.Unsafe                    (unsafePerformIO)
+import           Unsafe.Coerce                       (unsafeCoerce)
 
 -- | Application Configuration.
 data WebConfig = WebConfig
@@ -57,39 +60,39 @@ instance FromProp m WebConfig where
     <$> "host" .?: hostname
     <*> "port" .?: port
 
-data WebNT env = WebNT { unNT :: forall a. Vault -> App env a -> IO a }
-
 data WebEnv env context = WebEnv
   { serveW     :: forall api. HasServer api context
-               => WebNT env -> Proxy api -> Context context -> Server api -> Application
-  , middleware :: WebNT env -> Middleware
-  , webNT      :: WebNT env
+               => Proxy api -> Context context -> Server api -> Application
+  , middleware :: Middleware
   , context    :: Context context
   , config     :: WebConfig
   }
 
-newWebEnv :: HasContextEntry context env => Context context -> WebConfig ->  WebEnv env context
-newWebEnv c = WebEnv (const serveWithContext) (const id) (WebNT $ \_ -> runAppT (getContextEntry c)) c
+newWebEnv
+  :: (HasContextEntry context env, HasLogger env)
+  => Context context -> WebConfig ->  WebEnv env context
+newWebEnv = WebEnv serveWithContext id
 
-registerMiddleware :: MonadMask n => String -> (WebNT env -> Middleware) -> Factory n (WebEnv env context) ()
-registerMiddleware _ md = modifyEnv $ \web -> web { middleware = \e -> md e . middleware web e }
+{-# INLINE registerMiddleware #-}
+registerMiddleware :: MonadMask n => Middleware -> Factory n (WebEnv env context) ()
+registerMiddleware md = modifyEnv $ \web -> web { middleware = md . middleware web }
 
-registerVault
-  :: forall context env v n
-  . ( HasContextEntry context env
-    , MonadMask n
-    , MonadIO n)
-  => Proxy context -> Proxy env -> String -> Lens' env v -> (v -> App env v) -> Factory n (WebEnv env context) ()
-registerVault _ _ name ls fv = do
-  r <- view ls . getContextEntry . context <$> getEnv
-  vr <- liftIO L.newKey
-  let go v x = fromMaybe x $ L.lookup vr v
-  modifyEnv $ \WebEnv{..} -> WebEnv
-    { webNT = WebNT $ \v -> unNT webNT v . withAppT (over ls (go v))
-    , ..}
-  registerMiddleware name $ \webNT app req resH -> do
-    r' <- unNT webNT (vault req) $ fv r
-    app req { vault = L.insert vr r' $ vault req } resH
+
+{-# INLINE askEnv #-}
+askEnv :: (MonadMask n, HasContextEntry context env) => Factory n (WebEnv env context) env
+askEnv = getContextEntry . context <$> getEnv
+
+{-# NOINLINE keyEnv #-}
+keyEnv :: L.Key ()
+keyEnv = unsafePerformIO L.newKey
+
+{-# INLINE runVault #-}
+runVault :: env -> L.Vault -> App env a -> IO a
+runVault env = runAppT . fromMaybe env . L.lookup (unsafeCoerce keyEnv)
+
+{-# INLINE modifyVault #-}
+modifyVault :: (env -> env) -> L.Vault -> L.Vault
+modifyVault f v = flip L.adjust (unsafeCoerce keyEnv) f v
 
 buildWeb
   :: forall context env n
@@ -110,13 +113,14 @@ buildWeb _ _ = do
           $ defaultSettings
           & setPort (fromIntegral port)
           & setOnExceptionResponse whenException
-          & setOnException (\mreq -> unNT webNT (maybe L.empty vault mreq) . logException)
+          & setOnException (\mreq -> runVault fenv (maybe L.empty vault mreq) . logException)
     logInfo $ "Service started on port(s): " <> portText
     delay $ logInfo "Service ended"
     return
       $ serveWarp config
-      $ (middleware webNT)
-      $ serveW webNT (Proxy @EmptyAPI) context emptyServer
+      $ (\app req -> app req {vault = L.insert (unsafeCoerce keyEnv) fenv $ vault req})
+      $ middleware
+      $ serveW (Proxy @EmptyAPI) context emptyServer
 
 {-# INLINE logException #-}
 logException :: HasLogger env => SomeException -> App env ()
@@ -134,18 +138,19 @@ formatException e = case fromException e of
   _                    -> fromString $ show e
 
 tryServe
-  ::( HasServer api context
+  ::( HasContextEntry context env
+    , HasServer api context
     , MonadMask n)
   => Bool
   -> Proxy context
   -> Proxy api
   -> ServerT api (App env)
   -> Factory n (WebEnv env context) ()
-tryServe b pc proxy server
-  = tryBuild b
-  $ modifyEnv
-  $ \web -> web { serveW = \w p c s -> serveW web w (gop p proxy) c
-  $ s :<|> (\v -> hoistServerWithContext proxy pc (go . unNT w v) server) }
+tryServe b pc proxy server = tryBuild b $ do
+  env <- askEnv
+  modifyEnv
+    $ \web -> web { serveW = \p c s -> serveW web (gop p proxy) c
+    $ s :<|> (\v -> hoistServerWithContext proxy pc (go . runVault env v) server) }
   where
     {-# INLINE go #-}
     go :: IO a -> Servant.Handler a

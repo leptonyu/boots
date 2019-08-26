@@ -2,6 +2,7 @@ module Boots(
     module Control.Monad.Factory
   , module Boots.App
   , module Boots.Random
+  , module Boots.Vault
   , module Boots.Factory.Salak
   , module Boots.Factory.Application
   , module Boots.Factory.Logger
@@ -23,6 +24,7 @@ import           Boots.Factory.Application
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
 import           Boots.Random
+import           Boots.Vault
 import           Control.Monad.Factory
 
 import           Data.Default

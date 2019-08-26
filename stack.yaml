@@ -5,5 +5,8 @@ packages:
 - boots-app
 - boots-web
 
+extra-deps:
+- salak-0.3.5.2
+
 ghc-options:
   "$locals": -ddump-to-file -ddump-hi

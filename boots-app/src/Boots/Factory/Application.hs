@@ -18,12 +18,11 @@ import           Data.Default
 import           Data.IORef
 import           Data.Maybe
 import           Data.String
-import           Data.Text              (Text)
-import           Data.Version           (Version)
+import           Data.Text             (Text)
+import           Data.Version          (Version)
 import           Lens.Micro
 import           Salak
 import           Salak.Yaml
-import           System.Random.SplitMix
 
 class HasApp env where
   askApp :: Lens' env AppEnv
@@ -60,14 +59,14 @@ buildApp confName version = do
       , loadExt = loadByExt YAML
       } askSourcePack
   -- Read application name
-  name      <- within configure
+  name       <- within configure
     $ fromMaybe (fromString confName)
     <$> require "application.name"
   -- Generate instanceid
-  randSeed    <- liftIO $ initSMGen >>= makeIORefRD
-  instanceId  <- within randSeed  $ hex32 <$> nextW64
+  randSeed   <- liftIO newRD
+  instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
   -- Initialize logger
-  logF        <- within configure $ buildLogger (name <> "," <> instanceId)
+  logF       <- within configure $ buildLogger (name <> "," <> instanceId)
   -- Consume logs from salak
   let lf c s = logCS c LevelTrace (toLogStr s) logF
   liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)

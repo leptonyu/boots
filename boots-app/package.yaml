@@ -15,6 +15,7 @@ library:
     - Boots
     - Boots.App
     - Boots.Random
+    - Boots.Vault
     - Boots.Factory.Salak
     - Boots.Factory.Application
     - Boots.Factory.Logger
@@ -22,7 +23,7 @@ library:
     - Boots.App.Internal
     - Paths_boots_app
   dependencies:
-    - boots         >= 0.2    && < 0.3
+    - boots         
     - exceptions    >= 0.10.2 && < 0.11
     - mtl           >= 2.2.2  && < 2.3
     - data-default  >= 0.7.1  && < 0.8
@@ -34,7 +35,7 @@ library:
     - salak         >= 0.3.5  && < 0.4
     - salak-yaml    >= 0.3.5  && < 0.4
     - splitmix      >= 0.0.3  && < 0.1
-    - monad-logger  >= 0.3.30 && < 0.4
+    - vault         >= 0.3.1  && < 0.4
 
 executables:
   demo:
