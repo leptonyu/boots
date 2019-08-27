@@ -27,14 +27,13 @@ buildTrace
     , MonadMask n
     , MonadIO n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
-buildTrace _ _ = tryBuildByKey True "web.trace.enabled" $ do
-  env <- askEnv
-  registerMiddleware $ \app req resH -> do
-    let x64 = runVault env (vault req) $ hex64 <$> nextW64 :: IO ByteString
+buildTrace _ _ = tryBuildByKey True "web.trace.enabled" $
+  registerMiddleware $ \app env req resH -> do
+    let x64 = runAppT env $ hex64 <$> nextW64 :: IO ByteString
     ids <- case lookup hTraceId (requestHeaders req) of
       Just tid -> (lookup hSpanId (requestHeaders req),tid,) <$> x64
       _        -> (Nothing,,) <$> x64 <*> x64
-    app req { vault = modifyVault @env (over askLogger $ addTrace $ go ids) $ vault req} resH
+    app (over askLogger (addTrace $ go ids) env) req resH
   where
     {-# INLINE go #-}
     go :: (Maybe ByteString, ByteString, ByteString) -> LogStr

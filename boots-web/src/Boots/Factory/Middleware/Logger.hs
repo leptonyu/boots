@@ -24,11 +24,10 @@ buildWebLogger
     , MonadIO n
     , MonadMask n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
-buildWebLogger _ _ = tryBuildByKey True "web.log.enabled" $ do
-  env <- askEnv
-  registerMiddleware $ \app req resH -> app req
+buildWebLogger _ _ = tryBuildByKey True "web.log.enabled" $
+  registerMiddleware $ \app env req resH -> app env req
     $ \res -> do
-      runVault env (vault req) $ toLog req (responseStatus res)
+      runAppT env $ toLog req (responseStatus res)
       resH res
 
 {-# INLINE toLog #-}
@@ -51,8 +50,6 @@ toLog ~req Status{..} =
     <> g (requestHeaderUserAgent req)
     <> " "
     <> toLogStr statusCode
-
-
 
 {-# INLINE toMonadLogger #-}
 toMonadLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()

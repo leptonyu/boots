@@ -10,18 +10,22 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Boots.Factory.Web(
     buildWeb
   , WebConfig(..)
   , WebEnv(..)
+  , EnvMiddleware
   , newWebEnv
   , registerMiddleware
   , askEnv
   , tryServe
-  , runVault
-  , modifyVault
+  -- , runVault
+  -- , modifyVault
   , HasContextEntry(..)
+  , SetContextEntry(..)
+  , askContext
   , Context(..)
   , Vault
   , logException
@@ -37,15 +41,12 @@ import           Data.Maybe
 import           Data.Text                           (Text)
 import           Data.Text.Lazy                      (toStrict)
 import           Data.Text.Lazy.Encoding
-import qualified Data.Vault.Lazy                     as L
 import           Data.Word
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Salak
 import           Servant
 import           Servant.Server.Internal.ServerError (responseServerError)
-import           System.IO.Unsafe                    (unsafePerformIO)
-import           Unsafe.Coerce                       (unsafeCoerce)
 
 -- | Application Configuration.
 data WebConfig = WebConfig
@@ -63,10 +64,12 @@ instance FromProp m WebConfig where
     <$> "host" .?: hostname
     <*> "port" .?: port
 
+type EnvMiddleware env = (env -> Application) -> env -> Application
+
 data WebEnv env context = WebEnv
   { serveW     :: forall api. HasServer api context
                => Proxy api -> Context context -> Server api -> Application
-  , middleware :: Middleware
+  , middleware :: EnvMiddleware env
   , envs       :: env
   , context    :: env -> Context context
   , config     :: WebConfig
@@ -79,10 +82,38 @@ askEnv' = lens envs (\x y -> x { envs = y})
 instance HasSalak env => HasSalak (WebEnv env context) where
   {-# INLINE askSalak #-}
   askSalak = askEnv' . askSalak
-
 instance HasLogger env => HasLogger (WebEnv env context) where
   {-# INLINE askLogger #-}
   askLogger = askEnv' . askLogger
+instance HasRandom env => HasRandom (WebEnv env context) where
+  {-# INLINE askRandom #-}
+  askRandom = askEnv' . askRandom
+
+class HasContextEntry context env => SetContextEntry context env where
+  setContextEntry :: env -> Context context -> Context context
+
+instance {-# OVERLAPPABLE #-} SetContextEntry as env => SetContextEntry (a : as) env where
+  {-# INLINE setContextEntry #-}
+  setContextEntry env (a :. as) = a :. setContextEntry env as
+
+instance SetContextEntry (env : as) env where
+  {-# INLINE setContextEntry #-}
+  setContextEntry env (_ :. as) = env :. as
+
+
+{-# INLINE askContext #-}
+askContext :: SetContextEntry context env => Lens' (Context context) env
+askContext = lens getContextEntry (flip setContextEntry)
+
+instance (SetContextEntry context env, HasSalak env) => HasSalak (Context context) where
+  {-# INLINE askSalak #-}
+  askSalak = askContext @context @env . askSalak
+instance (SetContextEntry context env, HasLogger env) => HasLogger (Context context) where
+  {-# INLINE askLogger #-}
+  askLogger = askContext @context @env . askLogger
+instance (SetContextEntry context env, HasRandom env) => HasRandom (Context context) where
+  {-# INLINE askRandom #-}
+  askRandom = askContext @context @env . askRandom
 
 {-# INLINE newWebEnv #-}
 newWebEnv
@@ -91,24 +122,12 @@ newWebEnv
 newWebEnv = WebEnv serveWithContext id
 
 {-# INLINE registerMiddleware #-}
-registerMiddleware :: MonadMask n => Middleware -> Factory n (WebEnv env context) ()
+registerMiddleware :: MonadMask n => EnvMiddleware env -> Factory n (WebEnv env context) ()
 registerMiddleware md = modifyEnv $ \web -> web { middleware = md . middleware web }
 
 {-# INLINE askEnv #-}
 askEnv :: MonadMask n => Factory n (WebEnv env context) env
 askEnv = envs <$> getEnv
-
-{-# NOINLINE keyEnv #-}
-keyEnv :: L.Key ()
-keyEnv = unsafePerformIO L.newKey
-
-{-# INLINE runVault #-}
-runVault :: env -> L.Vault -> App env a -> IO a
-runVault env = runAppT . fromMaybe env . L.lookup (unsafeCoerce keyEnv)
-
-{-# INLINE modifyVault #-}
-modifyVault :: (env -> env) -> L.Vault -> L.Vault
-modifyVault f v = flip L.adjust (unsafeCoerce keyEnv) f v
 
 buildWeb
   :: forall context env n
@@ -128,14 +147,13 @@ buildWeb _ _ = do
           $ defaultSettings
           & setPort (fromIntegral port)
           & setOnExceptionResponse whenException
-          & setOnException (\mreq -> runVault envs (maybe L.empty vault mreq) . logException)
+          & setOnException (\_ -> runAppT envs . logException)
     logInfo $ "Service started on port(s): " <> portText
     delay $ logInfo "Service ended"
     return
       $ serveWarp config
-      $ (\app req -> app req {vault = L.insert (unsafeCoerce keyEnv) envs $ vault req})
-      $ middleware
-      $ serveW (Proxy @EmptyAPI) (context envs) emptyServer
+      $ flip middleware envs
+      $ \env1 -> serveW (Proxy @EmptyAPI) (context env1) emptyServer
 
 {-# INLINE logException #-}
 logException :: HasLogger env => SomeException -> App env ()
@@ -153,7 +171,8 @@ formatException e = case fromException e of
   _                    -> fromString $ show e
 
 tryServe
-  ::( HasContextEntry context env
+  :: forall env context api n
+  . ( HasContextEntry context env
     , HasServer api context
     , MonadMask n)
   => Bool
@@ -161,11 +180,10 @@ tryServe
   -> Proxy api
   -> ServerT api (App env)
   -> Factory n (WebEnv env context) ()
-tryServe b pc proxy server = tryBuild b $ do
-  env <- askEnv
+tryServe b pc proxy server = tryBuild b $
   modifyEnv
     $ \web -> web { serveW = \p c s -> serveW web (gop p proxy) c
-    $ s :<|> (\v -> hoistServerWithContext proxy pc (go . runVault env v) server) }
+    $ s :<|> (\_ -> hoistServerWithContext proxy pc (go . runAppT (getContextEntry c :: env)) server) }
   where
     {-# INLINE go #-}
     go :: IO a -> Servant.Handler a

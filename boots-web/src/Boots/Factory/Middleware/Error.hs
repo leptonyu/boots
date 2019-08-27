@@ -7,7 +7,6 @@ module Boots.Factory.Middleware.Error where
 import           Boots
 import           Boots.Factory.Web
 import           Control.Exception (catch)
-import           Network.Wai
 
 {-# INLINE buildError #-}
 buildError
@@ -18,9 +17,8 @@ buildError
     , MonadIO n
     , MonadMask n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
-buildError _ _ = tryBuildByKey True "web.error.enabled" $ do
-  env <- askEnv
-  registerMiddleware $ \app req resH -> app req resH `catch`
+buildError _ _ = tryBuildByKey True "web.error.enabled" $
+  registerMiddleware $ \app env req resH -> app env req resH `catch`
     \e -> do
-      runVault env (vault req) $ logException e
+      runAppT env $ logException e
       resH (whenException e)

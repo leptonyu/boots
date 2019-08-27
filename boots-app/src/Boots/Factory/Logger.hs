@@ -58,9 +58,6 @@ data LogLevel
 -- | Environment providing a logging function.
 class HasLogger env where
   askLogger :: Lens' env LogFunc
-  askLogLevel :: Lens' env (Writable LogLevel)
-  askLogLevel = askLogger . lens logLvl (\x y -> x { logLvl = y })
-  {-# INLINE askLogLevel #-}
 
 instance HasLogger LogFunc where
   askLogger = id
