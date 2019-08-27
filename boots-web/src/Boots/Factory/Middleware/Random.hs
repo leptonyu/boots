@@ -17,5 +17,5 @@ buildRandom
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
 buildRandom _ _ = tryBuildByKey True "web.random.enabled" $
   registerMiddleware $ \app env req resH -> do
-    seed <- forkRD (view askRandom env)
-    app (over askRandom (const seed) env) req resH
+    seed <- unRD (view askRandom env) splitSMGen
+    makeRD0 seed $ \rd -> app (over askRandom (const rd) env) req resH

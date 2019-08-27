@@ -8,11 +8,13 @@ module Boots.Random(
   , HasRandom(..)
   , newRD
   , makeRD
+  , makeRD0
   , forkRD
   , MonadRandom(..)
   , hex32
   , hex64
   , nextWord64
+  , splitSMGen
   ) where
 
 import           Boots.App.Internal
@@ -20,7 +22,7 @@ import           Control.Monad.Factory
 import           Data.IORef
 import           Data.String
 import           Data.Tuple
-import           Data.Word
+import           Foreign
 import           Lens.Micro
 import           Lens.Micro.Extras
 import           Numeric                (showHex)
@@ -42,6 +44,19 @@ newRD = initSMGen >>= makeRD
 {-# INLINE makeRD #-}
 makeRD :: SMGen -> IO RD
 makeRD seed = newIORef seed >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap . f))
+
+{-# INLINE makeRD0 #-}
+makeRD0 :: SMGen -> (RD -> IO a) -> IO a
+makeRD0 smg f = do
+  let (seed, gamma) = unseedSMGen smg
+  allocaArray 2 $ \ps -> do
+    pokeArray ps [seed,gamma]
+    f $ RD $ \func -> do
+      [s0,g0] <- peekArray 2 ps
+      let (a, smg2) = func $ seedSMGen s0 g0
+          (s1,g1)   = unseedSMGen smg2
+      pokeArray ps [s1,g1]
+      return a
 
 {-# INLINE forkRD #-}
 forkRD :: RD -> IO RD

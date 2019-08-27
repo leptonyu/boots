@@ -238,7 +238,7 @@ newLogger name LogConfig{..} = do
     else return (\e -> runLog logf logLvl e `catch` lfail, close)
   let
     {-# INLINE logfunc #-}
-    logfunc lloc llevel llog = execLog LogEvent {..}
+    logfunc ~lloc ~llevel ~llog = execLog LogEvent {..}
   return LogFunc{..}
 
 -- | Add additional trace info into log.

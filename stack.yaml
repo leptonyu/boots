@@ -10,5 +10,5 @@ extra-deps:
 - warp-3.3.0
 - http2-2.0.3
 
-ghc-options:
-  "$locals": -ddump-to-file -ddump-hi
+# ghc-options:
+#   "$locals": -ddump-to-file -ddump-hi
