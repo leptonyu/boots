@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
-module Boots.Factory.Middleware.Random where
+module Boots.Middleware.Random where
 
 import           Boots
 import           Boots.Factory.Web

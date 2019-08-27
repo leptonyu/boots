@@ -33,6 +33,7 @@ module Boots.Factory.Web(
   ) where
 
 import           Boots
+import           Boots.Metrics
 import           Control.Exception
     ( SomeException
     , fromException
@@ -47,7 +48,6 @@ import           Network.Wai.Handler.Warp
 import           Salak
 import           Servant
 import           Servant.Server.Internal.ServerError (responseServerError)
-
 -- | Application Configuration.
 data WebConfig = WebConfig
   { hostname :: !String -- ^ Applicatoin hostname, used in swagger.
@@ -73,12 +73,16 @@ data WebEnv env context = WebEnv
   , envs       :: env
   , context    :: env -> Context context
   , config     :: WebConfig
+  , store      :: Store
   }
 
 {-# INLINE askEnv' #-}
 askEnv' :: Lens' (WebEnv env context) env
 askEnv' = lens envs (\x y -> x { envs = y})
 
+instance HasMetrics (WebEnv env context) where
+  {-# INLINE askMetrics #-}
+  askMetrics = lens store (\x y -> x { store = y})
 instance HasSalak env => HasSalak (WebEnv env context) where
   {-# INLINE askSalak #-}
   askSalak = askEnv' . askSalak
@@ -88,6 +92,12 @@ instance HasLogger env => HasLogger (WebEnv env context) where
 instance HasRandom env => HasRandom (WebEnv env context) where
   {-# INLINE askRandom #-}
   askRandom = askEnv' . askRandom
+instance HasApp env => HasApp (WebEnv env context) where
+  {-# INLINE askApp #-}
+  askApp = askEnv' . askApp
+instance HasHealth env => HasHealth (WebEnv env context) where
+  {-# INLINE askHealth #-}
+  askHealth = askEnv' . askHealth
 
 class HasContextEntry context env => SetContextEntry context env where
   setContextEntry :: env -> Context context -> Context context
@@ -118,7 +128,11 @@ instance (SetContextEntry context env, HasRandom env) => HasRandom (Context cont
 {-# INLINE newWebEnv #-}
 newWebEnv
   :: (HasContextEntry context env, HasLogger env)
-  => env -> (env -> Context context) -> WebConfig ->  WebEnv env context
+  => env
+  -> (env -> Context context)
+  -> WebConfig
+  -> Store
+  -> WebEnv env context
 newWebEnv = WebEnv serveWithContext id
 
 {-# INLINE registerMiddleware #-}

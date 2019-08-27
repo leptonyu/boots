@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
-module Boots.Factory.Middleware.Logger(
+module Boots.Middleware.Logger(
     buildWebLogger
   , toMonadLogger
   , L.runLoggingT

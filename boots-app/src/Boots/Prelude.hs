@@ -2,6 +2,7 @@ module Boots.Prelude(
   -- * Reexport
     rightToMaybe
   , whenJust
+  , when
   , IsString(..)
   , view
   , over
@@ -12,6 +13,7 @@ module Boots.Prelude(
   , Default(..)
   ) where
 
+import           Control.Monad
 import           Data.Default
 import           Data.Proxy
 import           Data.String

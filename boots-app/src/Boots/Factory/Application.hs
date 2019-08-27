@@ -12,6 +12,7 @@ module Boots.Factory.Application(
 
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
+import           Boots.Health
 import           Boots.Prelude
 import           Boots.Random
 import           Control.Concurrent    (setNumCapabilities)
@@ -38,6 +39,9 @@ instance HasSalak AppEnv where
 instance HasRandom AppEnv where
   askRandom = lens randSeed (\x y -> x {randSeed = y})
   {-# INLINE askRandom #-}
+instance HasHealth AppEnv where
+  askHealth = lens health (\x y -> x {health = y})
+  {-# INLINE askHealth #-}
 
 data AppEnv = AppEnv
   { name       :: Text    -- ^ Service name.
@@ -46,6 +50,7 @@ data AppEnv = AppEnv
   , logF       :: LogFunc
   , configure  :: Salak
   , randSeed   :: RD -- ^ Random seed
+  , health     :: IO Health
   }
 
 buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
@@ -69,7 +74,9 @@ buildApp confName version = do
     -- Initialize logger
     logF       <- buildLogger (name <> "," <> instanceId)
     -- Consume logs from salak
-    let lf c s = logCS c LevelTrace (toLogStr s) logF
+    let
+      health = emptyHealth
+      lf c s = logCS c LevelTrace (toLogStr s) logF
     liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)
     -- Config new logger to salak
     setLogF lf

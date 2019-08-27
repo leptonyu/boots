@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
-module Boots.Factory.Middleware.Error where
+module Boots.Middleware.Error where
 
 import           Boots
 import           Boots.Factory.Web

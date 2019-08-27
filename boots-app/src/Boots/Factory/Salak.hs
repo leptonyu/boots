@@ -9,7 +9,6 @@ module Boots.Factory.Salak(
 
 import           Boots.App.Internal
 import           Boots.Prelude
-import           Control.Monad
 import           Control.Monad.Factory
 import           Data.Maybe
 import           Data.Text             (Text)

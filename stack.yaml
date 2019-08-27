@@ -8,6 +8,7 @@ packages:
 extra-deps:
 - warp-3.3.0
 - http2-2.0.3
+# - time-1.9.3
 
 # ghc-options:
 #   "$locals": -ddump-to-file -ddump-hi

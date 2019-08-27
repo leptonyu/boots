@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeApplications  #-}
-module Boots.Factory.Middleware.Trace where
+module Boots.Middleware.Trace where
 
 import           Boots
 import           Boots.Factory.Web
