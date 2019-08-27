@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -20,10 +21,11 @@ import           Servant
 import           System.Info
 
 data Info = Info
-  { name    :: !Text
-  , version :: !Version
-  , profile :: !Bool
-  } deriving (Show, Generic)
+  { name       :: !Text
+  , instanceId :: !Text
+  , version    :: !Version
+  , profile    :: !Bool
+  } deriving (Show, Generic, ToSchema)
 
 type EndpointInfo = "info" :> Get '[JSON] Info
 
@@ -35,11 +37,10 @@ endpointInfo
     , HasApp env
     , HasContextEntry context env)
   => Proxy context
-  -> EndpointConfig
   -> Factory n (WebEnv env context) ()
-endpointInfo pc conf = do
+endpointInfo pc = do
   app <- asksEnv (view askApp)
-  makeEndpoint conf "info" pc (Proxy @EndpointInfo) $ liftIO $ do
+  makeEndpoint "info" pc (Proxy @EndpointInfo) $ liftIO $ do
     rtsf <- getRTSFlags
     return (go rtsf app)
   where
@@ -54,6 +55,7 @@ endpointInfo pc conf = do
 instance ToJSON Info where
   toJSON Info{..} = object
     [ "application"   .= name
+    , "instanceId"    .= instanceId
     , "version"       .= version
     , "isMultithread" .= rtsSupportsBoundThreads
     , "isProfile"     .= profile

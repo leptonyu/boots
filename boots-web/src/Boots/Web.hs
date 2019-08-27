@@ -30,6 +30,7 @@ import           Servant
 bootWeb
   :: forall api env context
   . ( HasServer api context
+    , HasSwagger api
     , HasContextEntry context env
     , HasLogger env
     , HasSalak env
@@ -48,6 +49,7 @@ bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
   app  <- buildApp appName ver
   within app $ do
     conf  <- require "application"
+    ec    <- require "endpoints"
     store <- liftIO newStore
     logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
     let
@@ -55,11 +57,12 @@ bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
          (fenv app)
          fcxt
          conf
+         ec
          store :: WebEnv env context
       pe = Proxy @env
       pc = Proxy @context
     within c $ do
-      tryServe True  pc api server
+      tryServeWithSwagger True  pc api server
       buildError     pc pe
       buildCustom    pc pe
       buildWebLogger pc pe

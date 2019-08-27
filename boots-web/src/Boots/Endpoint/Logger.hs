@@ -18,7 +18,7 @@ type EndpointLogger = "logger" :> (Get '[JSON] LogInfo :<|> ReqBody '[JSON] LogI
 
 newtype LogInfo = LogInfo
   { level :: String
-  } deriving (Show, Generic, ToJSON, FromJSON)
+  } deriving (Show, Generic, ToJSON, FromJSON, ToSchema)
 
 endpointLogger
   ::( MonadMask n
@@ -26,11 +26,10 @@ endpointLogger
     , HasLogger env
     , HasContextEntry context env)
   => Proxy context
-  -> EndpointConfig
   -> Factory n (WebEnv env context) ()
-endpointLogger pc conf = do
+endpointLogger pc = do
   LogFunc{..} <- asksEnv (view askLogger)
-  makeEndpoint conf "logger" pc (Proxy @EndpointLogger) (getLogInfo logLvl :<|> putLogInfo logLvl)
+  makeEndpoint "logger" pc (Proxy @EndpointLogger) (getLogInfo logLvl :<|> putLogInfo logLvl)
   where
     getLogInfo w = liftIO $ LogInfo . show <$> getWritable w
     putLogInfo w LogInfo{..} = liftIO $ setWritable (rightToMaybe $ levelFromStr $ fromString level) w >> return NoContent

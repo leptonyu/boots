@@ -22,6 +22,8 @@ instance ToJSON HealthStatus
 instance ToJSON Health where
   toJSON = genericToJSON defaultOptions
     { omitNothingFields = True }
+instance ToSchema HealthStatus
+instance ToSchema Health
 
 endpointHealth
   ::( MonadMask n
@@ -30,10 +32,9 @@ endpointHealth
     , HasLogger env
     , HasContextEntry context env)
   => Proxy context
-  -> EndpointConfig
   -> Factory n (WebEnv env context) ()
-endpointHealth pc conf = do
+endpointHealth pc = do
   health <- asksEnv (view askHealth)
-  makeEndpoint conf "logger" pc (Proxy @EndpointHealth) $ liftIO $ do
+  makeEndpoint "health" pc (Proxy @EndpointHealth) $ liftIO $ do
     h@Health{..} <- health
     if status == UP then return h else throwM err400 { errBody = encode h }

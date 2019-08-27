@@ -21,6 +21,9 @@ module Boots.Factory.Web(
   , registerMiddleware
   , askEnv
   , tryServe
+  , trySwagger
+  , tryServeWithSwagger
+  , EndpointConfig(..)
   -- , runVault
   -- , modifyVault
   , HasContextEntry(..)
@@ -30,15 +33,21 @@ module Boots.Factory.Web(
   , Vault
   , logException
   , whenException
+  , HasSwagger(..)
+  , ToSchema
   ) where
 
 import           Boots
+import           Boots.Endpoint.Swagger
 import           Boots.Metrics
 import           Control.Exception
     ( SomeException
     , fromException
     )
+import qualified Data.HashMap.Strict                 as HM
 import           Data.Maybe
+import           Data.Swagger                        (Swagger)
+import           Data.Swagger.Schema                 (ToSchema)
 import           Data.Text                           (Text)
 import           Data.Text.Lazy                      (toStrict)
 import           Data.Text.Lazy.Encoding
@@ -48,6 +57,8 @@ import           Network.Wai.Handler.Warp
 import           Salak
 import           Servant
 import           Servant.Server.Internal.ServerError (responseServerError)
+import           Servant.Swagger
+
 -- | Application Configuration.
 data WebConfig = WebConfig
   { hostname :: !String -- ^ Applicatoin hostname, used in swagger.
@@ -64,15 +75,28 @@ instance FromProp m WebConfig where
     <$> "host" .?: hostname
     <*> "port" .?: port
 
+data EndpointConfig = EndpointConfig
+  { enabled   :: Bool
+  , endpoints :: HM.HashMap Text Bool
+  }
+
+instance FromProp m EndpointConfig where
+  fromProp = EndpointConfig
+    <$> "enabled" .?= True
+    <*> "enabled" .?= HM.empty
+
 type EnvMiddleware env = (env -> Application) -> env -> Application
 
 data WebEnv env context = WebEnv
   { serveW     :: forall api. HasServer api context
                => Proxy api -> Context context -> Server api -> Application
+  , serveA     :: forall api. HasSwagger api
+               => Proxy api -> Swagger
   , middleware :: EnvMiddleware env
   , envs       :: env
   , context    :: env -> Context context
   , config     :: WebConfig
+  , endpoint   :: EndpointConfig
   , store      :: Store
   }
 
@@ -131,9 +155,10 @@ newWebEnv
   => env
   -> (env -> Context context)
   -> WebConfig
+  -> EndpointConfig
   -> Store
   -> WebEnv env context
-newWebEnv = WebEnv serveWithContext id
+newWebEnv = WebEnv serveWithContext toSwagger id
 
 {-# INLINE registerMiddleware #-}
 registerMiddleware :: MonadMask n => EnvMiddleware env -> Factory n (WebEnv env context) ()
@@ -148,6 +173,7 @@ buildWeb
   . ( MonadIO n
     , MonadMask n
     , HasApp env
+    , HasSalak env
     , HasLogger env
     , HasContextEntry context env
     )
@@ -156,18 +182,28 @@ buildWeb _ _ = do
   (WebEnv{..} :: WebEnv env context) <- getEnv
   within envs $ do
     AppEnv{..}        <- asksEnv (view askApp)
-    let portText = fromString (show $ port config)
-        serveWarp WebConfig{..} = runSettings
+    let serveWarp WebConfig{..} = runSettings
           $ defaultSettings
           & setPort (fromIntegral port)
           & setOnExceptionResponse whenException
           & setOnException (\_ -> runAppT envs . logException)
-    logInfo $ "Service started on port(s): " <> portText
+    let ok = enabled endpoint && HM.lookup "swagger" (endpoints endpoint) /= Just False
+    when ok
+      $ logInfo
+      $ "Swagger enabled: http://"
+      <> toLogStr (hostname config)
+      <> ":"
+      <> toLogStr (port config)
+      <> "/endpoints/swagger"
+    logInfo $ "Service started on port(s): " <> toLogStr (port config)
     delay $ logInfo "Service ended"
     return
       $ serveWarp config
       $ flip middleware envs
-      $ \env1 -> serveW (Proxy @EmptyAPI) (context env1) emptyServer
+      $ \env1 -> if ok
+        then serveW (Proxy @EndpointSwagger) (context env1)
+              (return $ baseInfo (hostname config) name version (port config) $ serveA $ Proxy @EmptyAPI)
+        else serveW (Proxy @EmptyAPI) (context env1) emptyServer
 
 {-# INLINE logException #-}
 logException :: HasLogger env => SomeException -> App env ()
@@ -183,6 +219,28 @@ formatException :: SomeException -> Text
 formatException e = case fromException e of
   Just ServerError{..} -> fromString errReasonPhrase <> " " <> toStrict (decodeUtf8 errBody)
   _                    -> fromString $ show e
+
+tryServeWithSwagger
+  :: forall env context api n
+  . ( HasContextEntry context env
+    , HasServer api context
+    , HasSwagger api
+    , MonadMask n)
+  => Bool
+  -> Proxy context
+  -> Proxy api
+  -> ServerT api (App env)
+  -> Factory n (WebEnv env context) ()
+tryServeWithSwagger b pc proxy server = do
+  trySwagger b    proxy
+  tryServe   b pc proxy server
+
+trySwagger
+  :: (MonadMask n, HasSwagger api)
+  => Bool
+  -> Proxy api
+  -> Factory n (WebEnv env context) ()
+trySwagger b api = tryBuild b $ modifyEnv $ \web -> web { serveA = serveA web . gop api }
 
 tryServe
   :: forall env context api n
@@ -202,8 +260,9 @@ tryServe b pc proxy server = tryBuild b $
     {-# INLINE go #-}
     go :: IO a -> Servant.Handler a
     go = liftIO
-    {-# INLINE gop #-}
-    gop :: forall a b. Proxy a -> Proxy b -> Proxy (a :<|> b)
-    gop _ _ = Proxy
+
+{-# INLINE gop #-}
+gop :: forall a b. Proxy a -> Proxy b -> Proxy (a :<|> b)
+gop _ _ = Proxy
 
 

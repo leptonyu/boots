@@ -32,9 +32,8 @@ endpointMetrics
     , HasLogger env
     , HasContextEntry context env)
   => Proxy context
-  -> EndpointConfig
   -> Factory n (WebEnv env context) ()
-endpointMetrics pc conf = do
+endpointMetrics pc = do
   store       <- asksEnv (view askMetrics)
   LogFunc{..} <- asksEnv (view askLogger)
   liftIO $ do
@@ -49,7 +48,7 @@ endpointMetrics pc conf = do
         Counter.inc requests
         when (statusCode (responseStatus res) >= 400) $ Counter.inc req_fail
         resH res
-  makeEndpoint conf "metrics" pc (Proxy @EndpointMetrics) (liftIO $ go store)
+  makeEndpoint "metrics" pc (Proxy @EndpointMetrics) (liftIO $ go store)
   where
     {-# INLINE go #-}
     go s = do

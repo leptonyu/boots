@@ -2,7 +2,6 @@
 module Boots.Middleware.Endpoint where
 
 import           Boots
-import           Boots.Endpoint.Class
 import           Boots.Endpoint.Health
 import           Boots.Endpoint.Info
 import           Boots.Endpoint.Logger
@@ -19,12 +18,15 @@ buildEndpoints
     , HasLogger env
     , MonadIO n
     , MonadMask n)
-  => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
+  => Proxy context
+  -> Proxy env
+  -> Factory n (WebEnv env context) ()
 buildEndpoints pc _ = do
-  ec@EndpointConfig{..} <- require "web.endpoint"
-  tryBuild enabled $ do
-    endpointInfo    pc ec
-    endpointLogger  pc ec
-    endpointRefresh pc ec
-    endpointHealth  pc ec
-    endpointMetrics pc ec
+  WebEnv{..} <- getEnv
+  unless   (enabled endpoint) $ logInfo "Endpoint is disabled."
+  tryBuild (enabled endpoint) $ do
+    endpointInfo    pc
+    endpointLogger  pc
+    endpointRefresh pc
+    endpointHealth  pc
+    endpointMetrics pc

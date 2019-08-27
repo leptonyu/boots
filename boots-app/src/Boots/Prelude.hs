@@ -3,6 +3,7 @@ module Boots.Prelude(
     rightToMaybe
   , whenJust
   , when
+  , unless
   , IsString(..)
   , view
   , over

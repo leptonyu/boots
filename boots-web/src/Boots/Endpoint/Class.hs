@@ -11,8 +11,8 @@ import           Boots
 import           Boots.Factory.Web
 import qualified Data.HashMap.Strict     as HM
 import           Data.Maybe
+import qualified Data.Swagger            as S
 import           Data.Text               (Text)
-import           Salak
 import           Servant
 import           Servant.Server.Internal
 
@@ -24,30 +24,24 @@ instance HasServer api ctx
   route _ b = pathRouter "endpoints" . (route (Proxy @api) b)
   hoistServerWithContext _ = hoistServerWithContext (Proxy @api)
 
-data EndpointConfig = EndpointConfig
-  { enabled   :: Bool
-  , endpoints :: HM.HashMap Text Bool
-  }
-
-instance FromProp m EndpointConfig where
-  fromProp = EndpointConfig
-    <$> "enabled" .?= True
-    <*> "enabled" .?= HM.empty
+instance HasSwagger api => HasSwagger (EndpointTag :> api) where
+  toSwagger _ = toSwagger (Proxy @api) & S.applyTags [S.Tag "endpoints" (Just "Endpoints API") Nothing]
 
 makeEndpoint
   :: forall context env api n
   . ( MonadMask n
     , MonadIO n
     , HasLogger env
+    , HasSwagger api
     , HasServer api context
     , HasContextEntry context env)
-  => EndpointConfig
-  -> Text
+  => Text
   -> Proxy context
   -> Proxy api
   -> ServerT api (App env)
   -> Factory n (WebEnv env context) ()
-makeEndpoint EndpointConfig{..} name pc _ server = do
-  let ok = fromMaybe True $ HM.lookup name endpoints
-  when ok $ logInfo $ "Endpoint " <> toLogStr name <> " actived."
-  tryServe ok pc (Proxy @(EndpointTag :> api)) server
+makeEndpoint name pc _ server = do
+  WebEnv{..} <- getEnv
+  let ok = fromMaybe True $ HM.lookup name $ endpoints endpoint
+  when ok $ logDebug $ "Endpoint " <> toLogStr name <> " actived."
+  tryServeWithSwagger ok pc (Proxy @(EndpointTag :> api)) server

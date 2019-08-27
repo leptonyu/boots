@@ -19,20 +19,19 @@ type EndpointRefresh = "refresh" :> Post '[JSON] Refresh
 data Refresh = Refresh
   { hasError :: !Bool
   , msgs     :: ![String]
-  } deriving (Eq, Show, Generic, ToJSON)
+  } deriving (Eq, Show, Generic, ToJSON, ToSchema)
 
 endpointRefresh
   ::( MonadMask n
     , MonadIO n
-    , HasLogger env
     , HasSalak env
+    , HasLogger env
     , HasContextEntry context env)
   => Proxy context
-  -> EndpointConfig
   -> Factory n (WebEnv env context) ()
-endpointRefresh pc conf = do
+endpointRefresh pc = do
   reload <- askReload
-  makeEndpoint conf "logger" pc (Proxy @EndpointRefresh) (liftIO $ go <$> reload)
+  makeEndpoint "refresh" pc (Proxy @EndpointRefresh) (liftIO $ go <$> reload)
   where
     {-# INLINE go #-}
     go ReloadResult{..} = Refresh{..}

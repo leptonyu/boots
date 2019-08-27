@@ -53,6 +53,19 @@ data AppEnv = AppEnv
   , health     :: IO Health
   }
 
+data AppConfig = AppConfig
+  { appName         :: Maybe Text
+  , numCapabilities :: Maybe Int
+  , randomType      :: RDType
+  }
+
+instance FromProp m AppConfig where
+  {-# INLINE fromProp #-}
+  fromProp = AppConfig
+    <$> "name"
+    <*> "num-capabilities"
+    <*> "random.type" .?= RDMVar
+
 buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
 buildApp confName version = do
   mv        <- liftIO $ newIORef []
@@ -64,12 +77,11 @@ buildApp confName version = do
       } askSourcePack
   -- Read application name
   within configure $ do
-    mayi       <- require "application.num-apabilities"
-    liftIO $ whenJust mayi setNumCapabilities
-    name       <- fromMaybe (fromString confName) <$> require "application.name"
+    AppConfig{..} <- require "application"
+    liftIO $ whenJust numCapabilities setNumCapabilities
+    let name = fromMaybe (fromString confName) appName
     -- Generate instanceid
-    tp         <- fromMaybe RDMVar                <$> require "application.random.type"
-    randSeed   <- liftIO $ newRD tp
+    randSeed   <- liftIO $ newRD randomType
     instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
     -- Initialize logger
     logF       <- buildLogger (name <> "," <> instanceId)
