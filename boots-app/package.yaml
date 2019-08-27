@@ -23,7 +23,7 @@ library:
     - Boots.App.Internal
     - Paths_boots_app
   dependencies:
-    - boots         
+    - boots         >= 0.2    && < 0.3
     - exceptions    >= 0.10.2 && < 0.11
     - mtl           >= 2.2.2  && < 2.3
     - data-default  >= 0.7.1  && < 0.8
@@ -43,7 +43,7 @@ executables:
     main: Main.hs
     dependencies:
     - boots-app
-    - time
+    - time >= 1.8.0 && < 1.10
 
 # tests:
 #   spec:

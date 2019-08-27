@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 392c127efca0adf982612b728b270938df20c798eef98a326ff1b4cd4a8da997
+-- hash: 2d6c0df451607d0fe511708397436b761313bc242c34c8aec2b00722f7b15e65
 
 name:           boots-web
 version:        0.2
@@ -16,6 +16,7 @@ author:         Daniel YU
 maintainer:     leptonyu@gmail.com
 copyright:      2019 Daniel YU
 license:        MIT
+license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
@@ -36,8 +37,8 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
-    , boots
-    , boots-app
+    , boots >=0.2 && <0.3
+    , boots-app >=0.2 && <0.3
     , bytestring >=0.10.8 && <0.11
     , http-types >=0.12.3 && <0.13
     , monad-logger >=0.3.30 && <0.4
@@ -45,7 +46,7 @@ library
     , servant-server >=0.16.2 && <0.17
     , swagger2 >=2.4 && <2.5
     , text >=1.2.3 && <1.3
-    , time >=1.8.0 && <1.9
+    , time >=1.8.0 && <1.10
     , vault >=0.3.1 && <0.4
     , wai >=3.2.2 && <3.3
     , warp >=3.3.0 && <3.4
@@ -58,11 +59,11 @@ executable demo-web
   hs-source-dirs:
       demo
   default-extensions: RecordWildCards ScopedTypeVariables
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded -O2
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded
   build-depends:
       base >=4.10 && <5
-    , boots-app
-    , boots-web
-    , servant-server
-    , time
+    , boots-app >=0.2 && <0.3
+    , boots-web >=0.2 && <0.3
+    , servant-server >=0.16.2 && <0.17
+    , time >=1.8.0 && <1.10
   default-language: Haskell2010
