@@ -28,20 +28,18 @@ module Boots.Factory.Logger(
 
 import           Boots.App.Internal
 import           Boots.Factory.Salak
+import           Boots.Prelude
 import           Control.Concurrent      (forkIO)
 import           Control.Concurrent.Chan
 import           Control.Concurrent.MVar
 import           Control.Exception       (SomeException, catch, finally, mask_)
 import           Control.Monad
 import           Control.Monad.Factory
-import           Data.Default
 import           Data.Int
 import           Data.IORef
 import           Data.Text               (Text, toLower, unpack)
 import           Data.Word
 import           GHC.Stack
-import           Lens.Micro
-import           Lens.Micro.Extras
 import           Salak
 import           System.Log.FastLogger
 

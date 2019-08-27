@@ -12,15 +12,14 @@ module Boots.Factory.Application(
 
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
+import           Boots.Prelude
 import           Boots.Random
+import           Control.Concurrent    (setNumCapabilities)
 import           Control.Monad.Factory
-import           Data.Default
 import           Data.IORef
 import           Data.Maybe
-import           Data.String
 import           Data.Text             (Text)
 import           Data.Version          (Version)
-import           Lens.Micro
 import           Salak
 import           Salak.Yaml
 
@@ -59,18 +58,20 @@ buildApp confName version = do
       , loadExt = loadByExt YAML
       } askSourcePack
   -- Read application name
-  name       <- within configure
-    $ fromMaybe (fromString confName)
-    <$> require "application.name"
-  -- Generate instanceid
-  randSeed   <- liftIO newRD
-  instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
-  -- Initialize logger
-  logF       <- within configure $ buildLogger (name <> "," <> instanceId)
-  -- Consume logs from salak
-  let lf c s = logCS c LevelTrace (toLogStr s) logF
-  liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)
-  -- Config new logger to salak
-  within configure $ setLogF lf
-  return AppEnv{..}
+  within configure $ do
+    mayi       <- require "application.num-apabilities"
+    liftIO $ whenJust mayi setNumCapabilities
+    name       <- fromMaybe (fromString confName) <$> require "application.name"
+    -- Generate instanceid
+    tp         <- fromMaybe RDMVar                <$> require "application.random.type"
+    randSeed   <- liftIO $ newRD tp
+    instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
+    -- Initialize logger
+    logF       <- buildLogger (name <> "," <> instanceId)
+    -- Consume logs from salak
+    let lf c s = logCS c LevelTrace (toLogStr s) logF
+    liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)
+    -- Config new logger to salak
+    setLogF lf
+    return AppEnv{..}
 

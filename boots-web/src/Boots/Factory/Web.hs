@@ -183,13 +183,13 @@ tryServe
 tryServe b pc proxy server = tryBuild b $
   modifyEnv
     $ \web -> web { serveW = \p c s -> serveW web (gop p proxy) c
-    $ s :<|> (\_ -> hoistServerWithContext proxy pc (go . runAppT (getContextEntry c :: env)) server) }
+    $ s :<|> hoistServerWithContext proxy pc (go . runAppT (getContextEntry c :: env)) server }
   where
     {-# INLINE go #-}
     go :: IO a -> Servant.Handler a
     go = liftIO
     {-# INLINE gop #-}
-    gop :: forall a b. Proxy a -> Proxy b -> Proxy (a :<|> (Vault :> b))
+    gop :: forall a b. Proxy a -> Proxy b -> Proxy (a :<|> b)
     gop _ _ = Proxy
 
 

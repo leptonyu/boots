@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aca0f4300c25b86eb1aef853a46fcc234dc6462d72797ad1590160b88e526a4a
+-- hash: 392c127efca0adf982612b728b270938df20c798eef98a326ff1b4cd4a8da997
 
 name:           boots-web
 version:        0.2
@@ -58,7 +58,7 @@ executable demo-web
   hs-source-dirs:
       demo
   default-extensions: RecordWildCards ScopedTypeVariables
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -rtsopts -threaded -with-rtsopts=-K1K
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded -O2
   build-depends:
       base >=4.10 && <5
     , boots-app

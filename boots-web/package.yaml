@@ -40,7 +40,7 @@ library:
 executables:
   demo-web:
     source-dirs:  demo
-    ghc-options: -rtsopts -threaded -with-rtsopts=-K1K
+    ghc-options: -threaded -O2
     main: Main.hs
     dependencies:
     - boots-web

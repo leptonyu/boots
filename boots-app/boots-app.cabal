@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fb9c1bc5b22a2bf797e6bbd57ea5881e2c498aadaa2c501723fa1c500d9ccb49
+-- hash: 43ae072088e5a1057507aa948757d36fcffc7a2993b6e8e0ad82993be5ee7137
 
 name:           boots-app
 version:        0.2
@@ -26,7 +26,7 @@ library
       Boots
       Boots.App
       Boots.Random
-      Boots.Vault
+      Boots.Prelude
       Boots.Factory.Salak
       Boots.Factory.Application
       Boots.Factory.Logger
@@ -51,7 +51,6 @@ library
     , splitmix >=0.0.3 && <0.1
     , text >=1.2.3 && <1.3
     , unliftio-core >=0.1.2 && <0.2
-    , vault >=0.3.1 && <0.4
   default-language: Haskell2010
 
 executable demo

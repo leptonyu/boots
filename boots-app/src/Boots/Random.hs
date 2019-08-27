@@ -1,12 +1,14 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TupleSections          #-}
 module Boots.Random(
     RD(..)
   , HasRandom(..)
   , newRD
+  , RDType(..)
   , makeRD
   , makeRD0
   , forkRD
@@ -18,17 +20,28 @@ module Boots.Random(
   ) where
 
 import           Boots.App.Internal
+import           Boots.Prelude
+import           Control.Concurrent.MVar
 import           Control.Monad.Factory
 import           Data.IORef
-import           Data.String
+import           Data.Text               (toLower, unpack)
 import           Data.Tuple
 import           Foreign
-import           Lens.Micro
-import           Lens.Micro.Extras
-import           Numeric                (showHex)
+import           Numeric                 (showHex)
+import           Salak
 import           System.Random.SplitMix
 
 data RD = RD { unRD :: forall a. (SMGen -> (a, SMGen)) -> IO a }
+
+data RDType = RDIORef | RDMVar
+
+instance FromProp m RDType where
+  fromProp = readEnum (go . toLower)
+    where
+      {-# INLINE go #-}
+      go "ioref" = Right RDIORef
+      go "mvar"  = Right RDMVar
+      go v       = Left $ "unknown <" <> unpack v <> ">"
 
 class HasRandom env where
   askRandom :: Lens' env RD
@@ -38,12 +51,13 @@ instance HasRandom RD where
   {-# INLINE askRandom #-}
 
 {-# INLINE newRD #-}
-newRD :: IO RD
-newRD = initSMGen >>= makeRD
+newRD :: RDType -> IO RD
+newRD RDIORef = initSMGen >>= newIORef >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap.f))
+newRD _       = initSMGen >>= makeRD
 
 {-# INLINE makeRD #-}
 makeRD :: SMGen -> IO RD
-makeRD seed = newIORef seed >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap . f))
+makeRD seed = newMVar seed >>= \ref -> return (RD $ \f -> modifyMVar ref (return . swap . f))
 
 {-# INLINE makeRD0 #-}
 makeRD0 :: SMGen -> (RD -> IO a) -> IO a

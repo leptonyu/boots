@@ -15,7 +15,7 @@ library:
     - Boots
     - Boots.App
     - Boots.Random
-    - Boots.Vault
+    - Boots.Prelude
     - Boots.Factory.Salak
     - Boots.Factory.Application
     - Boots.Factory.Logger
@@ -35,10 +35,9 @@ library:
     - salak         >= 0.3.5  && < 0.4
     - salak-yaml    >= 0.3.5  && < 0.4
     - splitmix      >= 0.0.3  && < 0.1
-    - vault         >= 0.3.1  && < 0.4
 
 executables:
-  demo:
+  demo-app:
     source-dirs:  demo
     ghc-options: -rtsopts -threaded -with-rtsopts=-K1K
     main: Main.hs

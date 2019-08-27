@@ -8,12 +8,11 @@ module Boots.Factory.Salak(
   ) where
 
 import           Boots.App.Internal
+import           Boots.Prelude
 import           Control.Monad
 import           Control.Monad.Factory
 import           Data.Maybe
 import           Data.Text             (Text)
-import           Lens.Micro
-import           Lens.Micro.Extras
 import           Salak
 import           Salak.Yaml
 
