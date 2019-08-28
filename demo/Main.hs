@@ -5,9 +5,9 @@
 module Main where
 
 import           Boots
-import           Boots.Consul
+import           Boots.Cloud
 import           Boots.Web
-import           Paths_boots_web (version)
+import           Paths_demo  (version)
 import           Servant
 
 type API = "hello" :> Get '[JSON] NoContent
@@ -17,7 +17,7 @@ apiServer = logInfo "Hello" >> return NoContent
 
 main = bootWeb
   "demo"
-  Paths_boots_web.version
+  Paths_demo.version
   id
   (:. EmptyContext)
   (\_ _ -> buildConsul)

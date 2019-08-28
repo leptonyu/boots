@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1c287544cdef46431d192aa420669314fa308155369a41e947cd2de7a599db60
+-- hash: 2256546c1bc21b9781e4cb429ee44e32b814b73a4d8d2421c27ac8f1ddbb6ef4
 
 name:           boots-app
 version:        0.2
-synopsis:       Startup factories using IoC monad
-description:    Provide basic factories base on boots.
-category:       Library, Application
+synopsis:       Factory for quickly building an application
+description:    A quick out-of-box factory using to build application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots).
+category:       Library, Application, Configuration, Logger, Health, Random
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU
 maintainer:     leptonyu@gmail.com
@@ -24,15 +24,15 @@ extra-source-files:
 library
   exposed-modules:
       Boots
+  other-modules:
       Boots.App
-      Boots.Random
       Boots.Health
       Boots.Prelude
-      Boots.Factory.Salak
+      Boots.Random
+      Boots.App.Internal
       Boots.Factory.Application
       Boots.Factory.Logger
-  other-modules:
-      Boots.App.Internal
+      Boots.Factory.Salak
       Paths_boots_app
   hs-source-dirs:
       src

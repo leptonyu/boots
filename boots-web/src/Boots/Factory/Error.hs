@@ -2,27 +2,48 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
-module Boots.Middleware.Logger(
-    buildWebLogger
+-- |
+-- Module:      Boots.Factory.Error
+-- Copyright:   2019 Daniel YU
+-- License:     MIT
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
+-- This module provide supports for handling exception.
+--
+module Boots.Factory.Error(
+    buildError
+  , buildWebLogger
   , toMonadLogger
   , L.runLoggingT
   ) where
 
 import           Boots
 import           Boots.Factory.Web
+import           Control.Exception    (catch)
 import qualified Control.Monad.Logger as L
 import           GHC.Stack
 import           Network.HTTP.Types
 import           Network.Wai
 
+-- | Catch exception, convert to Resonpose.
+{-# INLINE buildError #-}
+buildError
+  :: forall context env n
+  . (HasWeb context env, MonadMask n, MonadIO n)
+  => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
+buildError _ _ = tryBuildByKey True "web.error.enabled" $
+  registerMiddleware $ \app env req resH -> app env req resH `catch`
+    \e -> do
+      runAppT env $ logException e
+      resH (whenException e)
+
+-- | Register logging requests.
 {-# INLINE buildWebLogger #-}
 buildWebLogger
   :: forall context env n
-  . ( HasLogger env
-    , HasSalak env
-    , HasContextEntry context env
-    , MonadIO n
-    , MonadMask n)
+  . (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
 buildWebLogger _ _ = tryBuildByKey True "web.log.enabled" $
   registerMiddleware $ \app env req resH -> app env req
@@ -51,6 +72,7 @@ toLog ~req Status{..} =
     <> " "
     <> toLogStr statusCode
 
+-- | Adapter to [monad-logger](https://hackage.haskell.org/package/monad-logger).
 {-# INLINE toMonadLogger #-}
 toMonadLogger :: ToLogStr msg => LogFunc -> L.Loc -> L.LogSource -> L.LogLevel -> msg -> IO ()
 toMonadLogger LogFunc{..} L.Loc{..} _ ll = logfunc g1 (g2 ll) . toLogStr

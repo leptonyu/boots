@@ -14,9 +14,11 @@ executables:
     source-dirs:  .
     ghc-options: -threaded
     main: Main.hs
+    other-modules:
+    - Paths_demo
     dependencies:
     - boots-app      >= 0.2    && < 0.3
     - boots-web      >= 0.2    && < 0.3
-    - boots-consul   >= 0.2    && < 0.3
+    - boots-cloud    >= 0.2    && < 0.3
     - servant-server >= 0.16.2 && < 0.17
     - time           >= 1.8.0  && < 1.10

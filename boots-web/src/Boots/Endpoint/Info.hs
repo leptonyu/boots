@@ -29,18 +29,14 @@ data Info = Info
 
 type EndpointInfo = "info" :> Get '[JSON] Info
 
-
+-- | Register info endpoint.
 endpointInfo
-  ::( MonadMask n
-    , MonadIO n
-    , HasLogger env
-    , HasApp env
-    , HasContextEntry context env)
+  :: (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointInfo pc = do
   app <- asksEnv (view askApp)
-  makeEndpoint "info" pc (Proxy @EndpointInfo) $ liftIO $ do
+  registerEndpoint "info" pc (Proxy @EndpointInfo) $ liftIO $ do
     rtsf <- getRTSFlags
     return (go rtsf app)
   where

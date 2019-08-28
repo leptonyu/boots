@@ -3,5 +3,5 @@
 packages:
   boots
   boots-app
+  boots-cloud
   boots-web
-  boots-consul

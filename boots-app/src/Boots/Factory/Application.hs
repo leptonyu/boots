@@ -5,6 +5,7 @@
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TupleSections          #-}
 module Boots.Factory.Application(
+  -- ** Application
     HasApp(..)
   , AppEnv(..)
   , buildApp
@@ -24,6 +25,7 @@ import           Data.Version          (Version)
 import           Salak
 import           Salak.Yaml
 
+-- | Environment values with `AppEnv`.
 class HasApp env where
   askApp :: Lens' env AppEnv
 
@@ -31,7 +33,7 @@ instance HasApp AppEnv where
   askApp = id
   {-# INLINE askApp #-}
 instance HasLogger AppEnv where
-  askLogger = lens logF (\x y -> x {logF = y})
+  askLogger = lens logFunc (\x y -> x {logFunc = y})
   {-# INLINE askLogger #-}
 instance HasSalak AppEnv where
   askSalak = lens configure (\x y -> x {configure = y})
@@ -43,16 +45,18 @@ instance HasHealth AppEnv where
   askHealth = lens health (\x y -> x {health = y})
   {-# INLINE askHealth #-}
 
+-- | Application environment.
 data AppEnv = AppEnv
-  { name       :: Text    -- ^ Service name.
-  , instanceId :: Text    -- ^ Instance id.
-  , version    :: Version -- ^ Service version.
-  , logF       :: LogFunc
-  , configure  :: Salak
-  , randSeed   :: RD -- ^ Random seed
-  , health     :: IO Health
+  { name       :: Text      -- ^ Service name.
+  , instanceId :: Text      -- ^ Service instance id.
+  , version    :: Version   -- ^ Service version.
+  , logFunc    :: LogFunc   -- ^ Logging function.
+  , configure  :: Salak     -- ^ Configuration function.
+  , randSeed   :: RD        -- ^ Random seed.
+  , health     :: IO Health -- ^ Health check.
   }
 
+-- | Application configuration used for customizing `AppEnv`.
 data AppConfig = AppConfig
   { appName         :: Maybe Text
   , numCapabilities :: Maybe Int
@@ -66,6 +70,7 @@ instance FromProp m AppConfig where
     <*> "num-capabilities"
     <*> "random.type" .?= RDMVar
 
+-- | Factory used to build `AppEnv`.
 buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
 buildApp confName version = do
   mv        <- liftIO $ newIORef []
@@ -84,11 +89,11 @@ buildApp confName version = do
     randSeed   <- liftIO $ newRD randomType
     instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
     -- Initialize logger
-    logF       <- buildLogger (name <> "," <> instanceId)
+    logFunc    <- buildLogger (name <> "," <> instanceId)
     -- Consume logs from salak
     let
       health = emptyHealth
-      lf c s = logCS c LevelTrace (toLogStr s) logF
+      lf c s = logCS c LevelTrace (toLogStr s) logFunc
     liftIO $ atomicModifyIORef' mv ([],) >>= sequence_ . reverse . fmap (uncurry lf)
     -- Config new logger to salak
     setLogF lf

@@ -1,7 +1,8 @@
 _common: !include "../common.yaml"
-name:                boots-consul
-synopsis:            Consul for boots.
-description:         Provide consul factories base on boots.
+name:                boots-cloud
+synopsis:            Factory for quickly building a microservice
+description:         A quick out-of-box factory using to build microservices with many useful builtin components based on [boots-web](https://hackage.haskell.org/package/boots-web).
+category:            Library, Application, Servant, Swagger, Web, Microservice, Consul
 <<: *legal
 extra-source-files:
 - README.md
@@ -12,9 +13,11 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - Boots.Consul
-    - Boots.Client
+    - Boots.Cloud
+  other-modules:
     - Network.Consul
+    - Boots.Factory.Consul
+    - Boots.Factory.Client
   dependencies:
     - aeson                >= 1.4.4  && < 1.5
     - boots                >= 0.2    && < 0.3

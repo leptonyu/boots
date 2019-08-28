@@ -5,7 +5,6 @@
   author:              Daniel YU
   maintainer:          leptonyu@gmail.com
   copyright:           2019 Daniel YU
-  category:            Library, Application
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   default-extensions:
     - RecordWildCards

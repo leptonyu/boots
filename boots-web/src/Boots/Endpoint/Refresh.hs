@@ -21,17 +21,14 @@ data Refresh = Refresh
   , msgs     :: ![String]
   } deriving (Eq, Show, Generic, ToJSON, ToSchema)
 
+-- | Register refresh endpoint.
 endpointRefresh
-  ::( MonadMask n
-    , MonadIO n
-    , HasSalak env
-    , HasLogger env
-    , HasContextEntry context env)
+  :: (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointRefresh pc = do
   reload <- askReload
-  makeEndpoint "refresh" pc (Proxy @EndpointRefresh) (liftIO $ go <$> reload)
+  registerEndpoint "refresh" pc (Proxy @EndpointRefresh) (liftIO $ go <$> reload)
   where
     {-# INLINE go #-}
     go ReloadResult{..} = Refresh{..}

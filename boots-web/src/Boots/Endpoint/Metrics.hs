@@ -25,12 +25,9 @@ type EndpointMetrics = "metrics" :> Get '[JSON] Metrics
 
 type Metrics = M.Map Text Text
 
+-- | Register metrics endpoint.
 endpointMetrics
-  ::( MonadMask n
-    , MonadIO n
-    , HasHealth env
-    , HasLogger env
-    , HasContextEntry context env)
+  :: (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointMetrics pc = do
@@ -48,7 +45,7 @@ endpointMetrics pc = do
         Counter.inc requests
         when (statusCode (responseStatus res) >= 400) $ Counter.inc req_fail
         resH res
-  makeEndpoint "metrics" pc (Proxy @EndpointMetrics) (liftIO $ go store)
+  registerEndpoint "metrics" pc (Proxy @EndpointMetrics) (liftIO $ go store)
   where
     {-# INLINE go #-}
     go s = do

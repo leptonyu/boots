@@ -2,7 +2,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeApplications  #-}
-module Boots.Middleware.Trace where
+-- |
+-- Module:      Boots.Factory.Trace
+-- Copyright:   2019 Daniel YU
+-- License:     MIT
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
+-- This module provide supports for generating trace info.
+--
+module Boots.Factory.Trace(
+    buildTrace
+  ) where
 
 import           Boots
 import           Boots.Factory.Web
@@ -18,14 +30,10 @@ hTraceId = "X-B3-TraceId"
 hSpanId :: HeaderName
 hSpanId = "X-B3-SpanId"
 
+-- | Generate trace info for each request.
 buildTrace
   :: forall env context n
-  . ( HasLogger env
-    , HasRandom env
-    , HasSalak env
-    , HasContextEntry context env
-    , MonadMask n
-    , MonadIO n)
+  . (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context -> Proxy env -> Factory n (WebEnv env context) ()
 buildTrace _ _ = tryBuildByKey True "web.trace.enabled" $
   registerMiddleware $ \app env req resH -> do
