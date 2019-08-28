@@ -22,6 +22,6 @@ baseInfo
   -> S.Swagger -- ^ Old swagger
   -> S.Swagger
 baseInfo hostName n v p s = s
-  & S.info . S.title   .~ (n <> " API Documents")
+  & S.info . S.title   .~ (n ++ " API Documents")
   & S.info . S.version .~ pack (showVersion v)
   & S.host ?~ S.Host hostName (Just $ fromIntegral p)
