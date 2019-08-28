@@ -6,12 +6,13 @@
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TypeApplications       #-}
 module Boots.Factory.Logger(
+  -- ** Logger
     HasLogger(..)
   , LogConfig(..)
   , LogFunc(..)
   , addTrace
   , buildLogger
-  -- ** Log Functions
+  -- *** Log Functions
   , logTrace
   , logDebug
   , logInfo
@@ -19,11 +20,11 @@ module Boots.Factory.Logger(
   , logError
   , logFatal
   , logCS
+  , LogLevel(..)
+  -- *** Reexport log functions
+  , levelFromStr
   , ToLogStr(..)
   , LogStr
-  , LogLevel(..)
-  -- ** Reexport log functions
-  , levelFromStr
   ) where
 
 import           Boots.App.Internal
@@ -43,7 +44,7 @@ import           GHC.Stack
 import           Salak
 import           System.Log.FastLogger
 
-
+-- | Log level.
 data LogLevel
   = LevelTrace
   | LevelDebug
@@ -65,6 +66,7 @@ instance FromProp m LogLevel where
   fromProp = readEnum levelFromStr
   {-# INLINE fromProp #-}
 
+-- | Parsing `LogLevel` from string.
 {-# INLINE levelFromStr #-}
 levelFromStr :: Text -> Either String LogLevel
 levelFromStr = go . toLower
@@ -87,7 +89,7 @@ toStr LevelWarn  = " WARN"
 toStr LevelError = "ERROR"
 toStr LevelFatal = "FATAL"
 
--- | Logger config.
+-- | Logger configuation used to customizing `LogFunc`.
 data LogConfig = LogConfig
   { bufferSize    :: !Word16         -- ^ Logger buffer size.
   , file          :: !(Maybe FilePath) -- ^ Logger file path.
@@ -110,7 +112,7 @@ instance MonadIO m => FromProp m LogConfig where
     <*> "async"       .?: asyncMode
   {-# INLINE fromProp #-}
 
-
+-- | A `Monad` which has the ability to log messages.
 class (MonadIO m, HasLogger e) => MonadLog e m | m -> e where
   askLog :: m LogFunc
 
@@ -120,24 +122,31 @@ instance (MonadIO m, HasLogger env) => MonadLog env (AppT env m) where
 instance (MonadIO m, MonadMask m, HasLogger env) => MonadLog env (Factory m env) where
   askLog = asksEnv (view askLogger)
 
+-- | Logs a `LevelTrace` message.
 logTrace :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logTrace s = askLog >>= liftIO . logCS callStack LevelTrace s
 
+-- | Logs a `LevelDebug` message.
 logDebug :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logDebug s = askLog >>= liftIO . logCS callStack LevelDebug s
 
+-- | Logs a `LevelInfo` message.
 logInfo :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logInfo s = askLog >>= liftIO . logCS callStack LevelInfo s
 
+-- | Logs a `LevelWarn` message.
 logWarn :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logWarn s = askLog >>= liftIO . logCS callStack LevelWarn s
 
+-- | Logs a `LevelError` message.
 logError :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logError s = askLog >>= liftIO . logCS callStack LevelError s
 
+-- | Logs a `LevelFatal` message.
 logFatal :: (MonadLog e m, HasCallStack) => LogStr -> m ()
 logFatal s = askLog >>= liftIO . logCS callStack LevelFatal s
 
+-- | Logs a message with location given by `CallStack`.
 {-# INLINE logCS #-}
 logCS :: CallStack -> LogLevel -> LogStr -> LogFunc -> IO ()
 logCS cs ll ls lf = logfunc lf (go $ getCallStack cs) ll ls
@@ -146,7 +155,6 @@ logCS cs ll ls lf = logfunc lf (go $ getCallStack cs) ll ls
     go ((_,loc):_) = loc
     go _           = def
 
-
 instance Default SrcLoc where
   def = SrcLoc
     "<unknown>"
@@ -154,6 +162,8 @@ instance Default SrcLoc where
     "<unknown>"
     0 0 0 0
 
+-- | A closable logging function.
+-- Also supporting change log level and count failed logs.
 data LogFunc = LogFunc
   { logfunc :: SrcLoc -> LogLevel -> LogStr -> IO ()
   , logend  :: IO ()
@@ -161,6 +171,7 @@ data LogFunc = LogFunc
   , logFail :: IO Int64
   }
 
+-- | Log event.
 data LogEvent = LogEvent
   { lloc   :: SrcLoc
   , llevel :: LogLevel
@@ -216,6 +227,7 @@ asyncLog lf ll lfail le = do
     , (modifyIORef' b (\_ -> False) >> (catch leftc lfail)) `finally` le
     )
 
+-- | Create a new `LogFunc`.
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
   (logf,close)  <- newFastLogger $ case file of
@@ -246,6 +258,7 @@ addTrace msg LogFunc{..} = LogFunc
   { logfunc = \a b c -> logfunc a b ("[" <> toLogStr msg <> "] " <> c)
   , ..}
 
+-- | Factory which produces a `LogFunc`.
 buildLogger
   :: ( MonadIO m
     , MonadMask m

@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1803d1346f0dcf8a6159e14380fb236f138b72f2d63805454fc907658639ad66
+-- hash: 8474a372a0dc7f50c69e6eb169a217cd29ccc0a917f6ae68177e745417581999
 
 name:           boots-web
 version:        0.2
-synopsis:       Web factories.
-description:    Provide web factories base on boots.
-category:       Library, Application
+synopsis:       Factory for quickly building a web application
+description:    A quick out-of-box factory using to build web application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots) and [servant](https://hackage.haskell.org/package/servant).
+category:       Library, Application, Servant, Swagger, Web
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU
 maintainer:     leptonyu@gmail.com
@@ -24,6 +24,12 @@ extra-source-files:
 library
   exposed-modules:
       Boots.Web
+      Boots.Factory.Endpoint
+      Boots.Factory.Error
+      Boots.Factory.Random
+      Boots.Factory.Trace
+  other-modules:
+      Boots.Factory.Web
       Boots.Metrics
       Boots.Endpoint.Class
       Boots.Endpoint.Health
@@ -32,14 +38,6 @@ library
       Boots.Endpoint.Metrics
       Boots.Endpoint.Refresh
       Boots.Endpoint.Swagger
-      Boots.Factory.Web
-      Boots.Middleware.Endpoint
-      Boots.Middleware.Error
-      Boots.Middleware.Logger
-      Boots.Middleware.Random
-      Boots.Middleware.Trace
-  other-modules:
-      Paths_boots_web
   hs-source-dirs:
       src
   default-extensions: RecordWildCards ScopedTypeVariables

@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f7c53a91b7ff59c797e8d1282268253aec47e32e9c59739fa106745a81b80436
+-- hash: 6335d56d752a4a3c0b91f08c413bcfd14e2d6ddde61108fa594fce07916854d9
 
 name:           boots
 version:        0.2
 synopsis:       IoC Monad in Haskell
-description:    Inverse of control monad used in building large application.
-category:       Library, Application
+description:    Monad used to encapsulate components, similiar to an IoC container.
+category:       Library, Application, Monad, Factory, IoC
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU
 maintainer:     leptonyu@gmail.com

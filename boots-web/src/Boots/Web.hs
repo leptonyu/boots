@@ -1,49 +1,64 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
+-- |
+-- Module:      Boots.Web
+-- Copyright:   2019 Daniel YU
+-- License:     MIT
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
+-- A quick out-of-box factory using to build web application with many useful builtin web components,
+-- based on [boots-app](https://hackage.haskell.org/package/boots-app) and [servant](https://hackage.haskell.org/package/servant).
+--
+-- 1. Builtin metrics, use [ekg-core](https://hackage.haskell.org/package/ekg-core) as backend.
+-- 2. Builtin tracing log, support B3-Tags.
+-- 3. Builtin endpoints, info, healthcheck, logger, metrics, refresh configuration, swagger api.
+-- 4. Builtin error management.
+--
+-- Hackage [boots-consul](https://hackage.haskell.org/package/boots-consul) provides consul support for building microservices.
+--
 module Boots.Web(
+  -- * Boot web
     bootWeb
   , module Boots.Factory.Web
-  --
+  -- * Metrics
   , module Boots.Metrics
-  , module Boots.Middleware.Endpoint
-  , module Boots.Middleware.Error
-  , module Boots.Middleware.Logger
-  , module Boots.Middleware.Random
-  , module Boots.Middleware.Trace
+  -- * Middleware
+  -- ** Endpoint
+  , module Boots.Factory.Endpoint
+  -- ** Tracing
+  , module Boots.Factory.Trace
+  -- ** Other
+  , module Boots.Factory.Error
+  , module Boots.Factory.Random
   ) where
 
 import           Boots.Factory.Web
 import           Boots.Metrics
 
-import           Boots.Middleware.Endpoint
-import           Boots.Middleware.Error
-import           Boots.Middleware.Logger
-import           Boots.Middleware.Random
-import           Boots.Middleware.Trace
+import           Boots.Factory.Endpoint
+import           Boots.Factory.Error
+import           Boots.Factory.Random
+import           Boots.Factory.Trace
 
 import           Boots
-import           Data.Version              (Version)
-import           Servant
+import           Data.Version           (Version)
 
-
+-- | A out-of-box web application booter with many predefined components.
 bootWeb
   :: forall api env context
   . ( HasServer api context
     , HasSwagger api
-    , HasContextEntry context env
-    , HasLogger env
-    , HasSalak env
-    , HasRandom env
-    , HasApp env
-    , HasHealth env)
-  => String
-  -> Version
-  -> (AppEnv -> env)
-  -> (env -> Context context)
-  -> (Proxy context -> Proxy env -> Factory IO (WebEnv env context) ())
-  -> Proxy api
-  -> ServerT api (App env)
+    , HasWeb context env)
+  => String -- ^ Application name.
+  -> Version -- ^ Application version.
+  -> (AppEnv -> env) -- ^ Function which generates @env@ using `AppEnv`.
+  -> (env -> Context context) -- ^ Function which generates @context@ using @env@.
+  -> (Proxy context -> Proxy env -> Factory IO (WebEnv env context) ()) -- ^ Customized `Factory`.
+  -> Proxy api -- ^ Api proxy.
+  -> ServerT api (App env) -- ^ Servant api server.
   -> IO ()
 bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
   app  <- buildApp appName ver

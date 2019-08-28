@@ -26,22 +26,23 @@ import           Data.Menshen
 import           Unsafe.Coerce           (unsafeCoerce)
 
 -- | Application monad transformation.
-newtype AppT cxt m a = AppT { unAppT :: ReaderT cxt m a }
-  deriving (Functor, Applicative, Monad, MonadTrans, MonadReader cxt, MonadIO, MonadThrow, MonadCatch, MonadMask)
+newtype AppT env m a = AppT { unAppT :: ReaderT env m a }
+  deriving (Functor, Applicative, Monad, MonadTrans, MonadReader env, MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 -- | Simple IO monad.
-type App cxt = AppT cxt IO
+type App env = AppT env IO
 
 -- | Run application monad transformation.
-runAppT :: cxt -> AppT cxt m a -> m a
-runAppT cxt ma = runReaderT (unAppT ma) cxt
+runAppT :: env -> AppT env m a -> m a
+runAppT env ma = runReaderT (unAppT ma) env
 {-# INLINE runAppT #-}
 
-withAppT :: (cxt -> cxt) -> AppT cxt m a -> AppT cxt m a
+-- | Execute a computation in a modified environment.
+withAppT :: (env -> env) -> AppT env m a -> AppT env m a
 withAppT = unsafeCoerce withReaderT
 {-# INLINE withAppT #-}
 
-instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
+instance MonadUnliftIO m => MonadUnliftIO (AppT env m) where
   {-# INLINE askUnliftIO #-}
   askUnliftIO = AppT $ ReaderT $ \r ->
                 withUnliftIO $ \u ->
@@ -52,5 +53,5 @@ instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
     withRunInIO $ \run ->
     inner (run . runAppT r)
 
-instance MonadThrow m => HasValid (AppT cxt m)
+instance MonadThrow m => HasValid (AppT env m)
 

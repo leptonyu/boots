@@ -20,16 +20,14 @@ newtype LogInfo = LogInfo
   { level :: String
   } deriving (Show, Generic, ToJSON, FromJSON, ToSchema)
 
+-- | Register logger endpoint.
 endpointLogger
-  ::( MonadMask n
-    , MonadIO n
-    , HasLogger env
-    , HasContextEntry context env)
+  :: (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointLogger pc = do
   LogFunc{..} <- asksEnv (view askLogger)
-  makeEndpoint "logger" pc (Proxy @EndpointLogger) (getLogInfo logLvl :<|> putLogInfo logLvl)
+  registerEndpoint "logger" pc (Proxy @EndpointLogger) (getLogInfo logLvl :<|> putLogInfo logLvl)
   where
     getLogInfo w = liftIO $ LogInfo . show <$> getWritable w
     putLogInfo w LogInfo{..} = liftIO $ setWritable (rightToMaybe $ levelFromStr $ fromString level) w >> return NoContent

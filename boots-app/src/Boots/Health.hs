@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TupleSections     #-}
 module Boots.Health(
+  -- ** Health Check
     Health(..)
   , HealthStatus(..)
   , HasHealth(..)
@@ -16,18 +17,22 @@ import qualified Data.HashMap.Strict   as HM
 import           Data.Text             (Text, pack)
 import           GHC.Generics
 
+-- | Health status.
 data HealthStatus = UP | DOWN deriving (Eq, Show, Generic)
 
+-- | Health detail.
 data Health = Health
   { status  :: !HealthStatus
   , errMsg  :: !(Maybe Text)
   , details :: !(HM.HashMap Text Health)
   } deriving (Eq, Show, Generic)
 
+-- | Default health detail.
 {-# INLINE emptyHealth #-}
 emptyHealth :: IO Health
 emptyHealth = return (Health UP Nothing HM.empty)
 
+-- | Environment values with health checker `IO Health`.
 class HasHealth env where
   askHealth :: Lens' env (IO Health)
 
@@ -45,9 +50,10 @@ insertHealth (na, ios) ior = do
 -- combineHealth :: [CheckHealth] -> IO Health -> IO Health
 -- combineHealth = flip (foldr insertHealth)
 
+-- | Register a health checker.
 registerHealth
   :: (MonadMask n, HasHealth env)
-  => Text
-  -> IO HealthStatus
+  => Text -- ^ Component name.
+  -> IO HealthStatus -- ^ Check action.
   -> Factory n env ()
 registerHealth  name status = modifyEnv $ over askHealth $ insertHealth (name, status)

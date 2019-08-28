@@ -6,19 +6,28 @@
 -- Stability:   experimental
 -- Portability: portable
 --
+-- A quick out-of-box factory using to build application with many useful builtin components,
+-- based on [boots](https://hackage.haskell.org/package/boots).
+--
+-- 1. Builtin configuration, use [salak](https://hackage.haskell.org/package/salak).
+-- 2. Builtin logger functions, use [fast-logger](https://hackage.haskell.org/package/fast-logger) as backend.
+-- 3. Builtin health check, support health check registration.
+-- 4. Builtin random support, use [splitmix](https://hackage.haskell.org/package/splitmix) as backend.
+-- 5. Define standard application values, such that @name@, @version@.
+--
 module Boots(
-  -- * Monad Factory
-    module Control.Monad.Factory
-  -- ** Factory Instances
-  , module Boots.Factory.Salak
-  , module Boots.Factory.Application
-  , module Boots.Factory.Logger
   -- * Monad App
-  , module Boots.App
+    module Boots.App
+  -- * Factory Instances
+  , module Boots.Factory.Application
+  , module Boots.Factory.Salak
+  , module Boots.Factory.Logger
   -- * Components
-  , module Boots.Prelude
   , module Boots.Health
   , module Boots.Random
+  -- * Reexport
+  , module Control.Monad.Factory
+  , module Boots.Prelude
   ) where
 
 import           Boots.App

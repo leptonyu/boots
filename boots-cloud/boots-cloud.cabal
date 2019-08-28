@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a046b7ad1dfa42ae04914fe719f41aafea18184c9f091977d37baf63c3e5f9c9
+-- hash: aeba62445f74b86f001565e29c9a2070024a8008a56eaa0bd8c163de9f465940
 
-name:           boots-consul
+name:           boots-cloud
 version:        0.2
-synopsis:       Consul for boots.
-description:    Provide consul factories base on boots.
-category:       Library, Application
+synopsis:       Factory for quickly building a microservice
+description:    A quick out-of-box factory using to build microservices with many useful builtin components based on [boots-web](https://hackage.haskell.org/package/boots-web).
+category:       Library, Application, Servant, Swagger, Web, Microservice, Consul
 homepage:       https://github.com/leptonyu/boots#readme
 author:         Daniel YU
 maintainer:     leptonyu@gmail.com
@@ -23,11 +23,11 @@ extra-source-files:
 
 library
   exposed-modules:
-      Boots.Consul
-      Boots.Client
-      Network.Consul
+      Boots.Cloud
   other-modules:
-      Paths_boots_consul
+      Network.Consul
+      Boots.Factory.Consul
+      Boots.Factory.Client
   hs-source-dirs:
       src
   default-extensions: RecordWildCards ScopedTypeVariables

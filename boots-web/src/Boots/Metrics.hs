@@ -7,5 +7,6 @@ module Boots.Metrics(
 import           Boots
 import           System.Metrics
 
+-- | Environment values with `Store`.
 class HasMetrics env where
   askMetrics :: Lens' env Store

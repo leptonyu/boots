@@ -1,7 +1,8 @@
 _common: !include "../common.yaml"
 name:                boots
 synopsis:            IoC Monad in Haskell
-description:         Inverse of control monad used in building large application.
+description:         Monad used to encapsulate components, similiar to an IoC container.
+category:            Library, Application, Monad, Factory, IoC
 <<: *legal
 extra-source-files:
 - README.md

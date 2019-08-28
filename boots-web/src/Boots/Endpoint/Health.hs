@@ -25,16 +25,13 @@ instance ToJSON Health where
 instance ToSchema HealthStatus
 instance ToSchema Health
 
+-- | Register health endpoint.
 endpointHealth
-  ::( MonadMask n
-    , MonadIO n
-    , HasHealth env
-    , HasLogger env
-    , HasContextEntry context env)
+  :: (HasWeb context env, MonadMask n, MonadIO n)
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointHealth pc = do
   health <- asksEnv (view askHealth)
-  makeEndpoint "health" pc (Proxy @EndpointHealth) $ liftIO $ do
+  registerEndpoint "health" pc (Proxy @EndpointHealth) $ liftIO $ do
     h@Health{..} <- health
     if status == UP then return h else throwM err400 { errBody = encode h }

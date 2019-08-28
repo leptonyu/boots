@@ -1,7 +1,8 @@
 _common: !include "../common.yaml"
 name:                boots-app
-synopsis:            Startup factories using IoC monad
-description:         Provide basic factories base on boots.
+synopsis:            Factory for quickly building an application
+description:         A quick out-of-box factory using to build application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots).
+category:            Library, Application, Configuration, Logger, Health, Random
 <<: *legal
 extra-source-files:
 - README.md
@@ -13,15 +14,17 @@ library:
   source-dirs: src
   exposed-modules:
     - Boots
+  other-modules:
+
     - Boots.App
-    - Boots.Random
     - Boots.Health
     - Boots.Prelude
-    - Boots.Factory.Salak
+    - Boots.Random
+    
+    - Boots.App.Internal
     - Boots.Factory.Application
     - Boots.Factory.Logger
-  other-modules:
-    - Boots.App.Internal
+    - Boots.Factory.Salak
     - Paths_boots_app
   dependencies:
     - boots                >= 0.2    && < 0.3
@@ -46,12 +49,3 @@ executables:
     dependencies:
     - boots-app
     - time >= 1.8.0 && < 1.10
-
-# tests:
-#   spec:
-#     main: Spec.hs
-#     source-dirs:
-#       - test
-#       - src
-#     dependencies:
-#       - hspec == 2.*

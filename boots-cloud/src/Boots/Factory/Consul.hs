@@ -1,18 +1,19 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-module Boots.Consul(
+module Boots.Factory.Consul(
     buildConsul
   ) where
 
 import           Boots
-import           Boots.Client        ()
+import           Boots.Factory.Client ()
 import           Boots.Web
-import           Control.Monad       (void)
-import qualified Data.HashMap.Strict as HM
-import           Data.Version        (showVersion)
+import           Control.Monad        (void)
+import qualified Data.HashMap.Strict  as HM
+import           Data.Version         (showVersion)
 import           Network.Consul
 
+-- | Register consule service.
 buildConsul
   :: (MonadMask n, MonadIO n, HasSalak env, HasApp env, HasLogger env)
   => Factory n (WebEnv env context) ()

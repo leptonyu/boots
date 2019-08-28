@@ -14,28 +14,33 @@
 
 module Boots.Factory.Web(
     buildWeb
-  , WebConfig(..)
+  , HasWeb
+  -- ** Configuration
   , HasWebConfig(..)
+  , WebConfig(..)
+  , EndpointConfig(..)
+  -- ** Environment
   , WebEnv(..)
-  , EnvMiddleware
   , newWebEnv
-  , registerMiddleware
   , askEnv
+  -- ** Modified Middleware
+  , EnvMiddleware
+  , registerMiddleware
+  -- ** Api serve
   , tryServe
   , trySwagger
   , tryServeWithSwagger
-  , EndpointConfig(..)
-  -- , runVault
-  -- , modifyVault
+  -- ** Utilities
+  , HasSwagger(..)
+  , HasServer(..)
   , HasContextEntry(..)
   , SetContextEntry(..)
-  , askContext
   , Context(..)
-  , Vault
+  , askContext
   , logException
   , whenException
-  , HasSwagger(..)
   , ToSchema
+  , Vault
   ) where
 
 import           Boots
@@ -76,12 +81,14 @@ instance FromProp m WebConfig where
     <$> "host" .?: hostname
     <*> "port" .?: port
 
+-- | Environment values with `WebConfig`.
 class HasWebConfig env where
   askWebConfig :: Lens' env WebConfig
 
 instance HasWebConfig WebConfig where
   askWebConfig = id
 
+-- | Endpoint configuration.
 data EndpointConfig = EndpointConfig
   { enabled   :: Bool
   , endpoints :: HM.HashMap Text Bool
@@ -92,26 +99,27 @@ instance FromProp m EndpointConfig where
     <$> "enabled" .?= True
     <*> "enabled" .?= HM.empty
 
-type EnvMiddleware env = (env -> Application) -> env -> Application
-
+-- | Web environment, which defined all components to build a web application.
 data WebEnv env context = WebEnv
   { serveW     :: forall api. HasServer api context
                => Proxy api -> Context context -> Server api -> Application
+               -- ^ A wrapper of `serveWithContext`.
   , serveA     :: forall api. HasSwagger api
                => Proxy api -> Swagger
-  , middleware :: EnvMiddleware env
-  , envs       :: env
-  , context    :: env -> Context context
-  , config     :: WebConfig
-  , endpoint   :: EndpointConfig
-  , store      :: Store
+              -- ^ A wrapper of `toSwagger`.
+  , middleware :: EnvMiddleware env -- ^ Modified middleware.
+  , envs       :: env -- ^ Application environment.
+  , context    :: env -> Context context -- ^ Function used to generate @context@ from @env.
+  , config     :: WebConfig -- ^ Web configuration.
+  , endpoint   :: EndpointConfig -- ^ Endpoint configuration.
+  , store      :: Store -- ^ Metrics store.
   }
 
 {-# INLINE askEnv' #-}
 askEnv' :: Lens' (WebEnv env context) env
 askEnv' = lens envs (\x y -> x { envs = y})
 
-
+-- | Environment values with `WebEnv`.
 instance HasWebConfig (WebEnv env context) where
   askWebConfig = lens config (\x y -> x { config = y})
 
@@ -134,6 +142,16 @@ instance HasHealth env => HasHealth (WebEnv env context) where
   {-# INLINE askHealth #-}
   askHealth = askEnv' . askHealth
 
+-- | Unified constraints for web environment.
+type HasWeb context env =
+  ( HasApp env
+  , HasLogger env
+  , HasHealth env
+  , HasRandom env
+  , HasSalak env
+  , HasContextEntry context env)
+
+-- | Class type used to modify @context@ entries.
 class HasContextEntry context env => SetContextEntry context env where
   setContextEntry :: env -> Context context -> Context context
 
@@ -145,7 +163,7 @@ instance SetContextEntry (env : as) env where
   {-# INLINE setContextEntry #-}
   setContextEntry env (_ :. as) = env :. as
 
-
+-- | Lens for modify @env@ in @context@.
 {-# INLINE askContext #-}
 askContext :: SetContextEntry context env => Lens' (Context context) env
 askContext = lens getContextEntry (flip setContextEntry)
@@ -160,35 +178,44 @@ instance (SetContextEntry context env, HasRandom env) => HasRandom (Context cont
   {-# INLINE askRandom #-}
   askRandom = askContext @context @env . askRandom
 
+-- | Create a web environment.
 {-# INLINE newWebEnv #-}
 newWebEnv
   :: (HasContextEntry context env, HasLogger env)
-  => env
-  -> (env -> Context context)
-  -> WebConfig
-  -> EndpointConfig
-  -> Store
+  => env -- ^ Application environment.
+  -> (env -> Context context) -- ^ Function used to generate @context@ from @env@.
+  -> WebConfig -- ^ Web configuration.
+  -> EndpointConfig -- ^ Endpoint configuration.
+  -> Store -- ^ Metrics store.
   -> WebEnv env context
 newWebEnv = WebEnv serveWithContext toSwagger id
 
-{-# INLINE registerMiddleware #-}
-registerMiddleware :: MonadMask n => EnvMiddleware env -> Factory n (WebEnv env context) ()
-registerMiddleware md = modifyEnv $ \web -> web { middleware = md . middleware web }
-
+-- | Get application environment @env@.
 {-# INLINE askEnv #-}
 askEnv :: MonadMask n => Factory n (WebEnv env context) env
 askEnv = envs <$> getEnv
 
+-- | Modified wai `Middleware`, which support modify @env@.
+type EnvMiddleware env = (env -> Application) -> env -> Application
+
+-- | Register a modified middleware.
+{-# INLINE registerMiddleware #-}
+registerMiddleware
+  :: MonadMask n
+  => EnvMiddleware env
+  -> Factory n (WebEnv env context) ()
+registerMiddleware md = modifyEnv $ \web -> web { middleware = md . middleware web }
+
+-- | Build a web application from `WebEnv`.
 buildWeb
   :: forall context env n
   . ( MonadIO n
     , MonadMask n
-    , HasApp env
-    , HasSalak env
-    , HasLogger env
-    , HasContextEntry context env
+    , HasWeb context env
     )
-  => Proxy context -> Proxy env -> Factory n (WebEnv env context) (IO ())
+  => Proxy context -- ^ @context@ proxy.
+  -> Proxy env -- ^ @env@ proxy.
+  -> Factory n (WebEnv env context) (IO ()) -- ^ Factory which create an application from `WebEnv`.
 buildWeb _ _ = do
   (WebEnv{..} :: WebEnv env context) <- getEnv
   within envs $ do
@@ -216,52 +243,58 @@ buildWeb _ _ = do
               (return $ baseInfo (hostname config) name version (port config) $ serveA $ Proxy @EmptyAPI)
         else serveW (Proxy @EmptyAPI) (context env1) emptyServer
 
+-- | Log exception.
 {-# INLINE logException #-}
 logException :: HasLogger env => SomeException -> App env ()
 logException = logError . toLogStr . formatException
 
+-- | Convert an exception into `Network.Wai.Response`.
 {-# INLINE whenException #-}
 whenException :: SomeException -> Network.Wai.Response
 whenException e = responseServerError
   $ fromMaybe err400 { errBody = fromString $ show e} (fromException e :: Maybe ServerError)
 
+-- | Format exception.
 {-# INLINE formatException #-}
 formatException :: SomeException -> Text
 formatException e = case fromException e of
   Just ServerError{..} -> fromString errReasonPhrase <> " " <> toStrict (decodeUtf8 errBody)
   _                    -> fromString $ show e
 
+-- | Serve web server with swagger.
 tryServeWithSwagger
   :: forall env context api n
   . ( HasContextEntry context env
     , HasServer api context
     , HasSwagger api
     , MonadMask n)
-  => Bool
-  -> Proxy context
-  -> Proxy api
-  -> ServerT api (App env)
+  => Bool -- ^ If do this action.
+  -> Proxy context -- ^ Context proxy.
+  -> Proxy api -- ^ Api proxy.
+  -> ServerT api (App env) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
 tryServeWithSwagger b pc proxy server = do
   trySwagger b    proxy
   tryServe   b pc proxy server
 
+-- | Try serve a swagger definition.
 trySwagger
   :: (MonadMask n, HasSwagger api)
-  => Bool
-  -> Proxy api
+  => Bool -- ^ If do this action.
+  -> Proxy api -- ^ Api proxy.
   -> Factory n (WebEnv env context) ()
 trySwagger b api = tryBuild b $ modifyEnv $ \web -> web { serveA = serveA web . gop api }
 
+-- | Try serve a web server.
 tryServe
   :: forall env context api n
   . ( HasContextEntry context env
     , HasServer api context
     , MonadMask n)
-  => Bool
-  -> Proxy context
-  -> Proxy api
-  -> ServerT api (App env)
+  => Bool -- ^ If do this action.
+  -> Proxy context -- ^ Context proxy.
+  -> Proxy api -- ^ Api proxy.
+  -> ServerT api (App env) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
 tryServe b pc proxy server = tryBuild b $
   modifyEnv

@@ -10,7 +10,6 @@ module Boots.Endpoint.Class where
 import           Boots
 import           Boots.Factory.Web
 import qualified Data.HashMap.Strict     as HM
-import           Data.Maybe
 import qualified Data.Swagger            as S
 import           Data.Text               (Text)
 import           Servant
@@ -27,21 +26,21 @@ instance HasServer api ctx
 instance HasSwagger api => HasSwagger (EndpointTag :> api) where
   toSwagger _ = toSwagger (Proxy @api) & S.applyTags [S.Tag "endpoints" (Just "Endpoints API") Nothing]
 
-makeEndpoint
+-- | Register endpoint, use this function to create custom endpoints.
+registerEndpoint
   :: forall context env api n
-  . ( MonadMask n
-    , MonadIO n
-    , HasLogger env
-    , HasSwagger api
+  . ( HasSwagger api
     , HasServer api context
-    , HasContextEntry context env)
-  => Text
-  -> Proxy context
-  -> Proxy api
-  -> ServerT api (App env)
+    , HasWeb context env
+    , MonadIO n
+    , MonadMask n)
+  => Text -- ^ Endpoint name, used for path, @/endpoints/:name@.
+  -> Proxy context -- ^ Context proxy.
+  -> Proxy api -- ^ Api proxy.
+  -> ServerT api (App env) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
-makeEndpoint name pc _ server = do
+registerEndpoint name pc _ server = do
   WebEnv{..} <- getEnv
-  let ok = fromMaybe True $ HM.lookup name $ endpoints endpoint
+  let ok = enabled endpoint && HM.lookup name (endpoints endpoint) /= Just False
   when ok $ logDebug $ "Endpoint " <> toLogStr name <> " actived."
   tryServeWithSwagger ok pc (Proxy @(EndpointTag :> api)) server

@@ -19,8 +19,11 @@ module Control.Monad.Factory.Class(
 
 -- | Monads which allow to produce @component@ under @env@, and @env@ can be changed by this procedure.
 class (Monad m, Monad n) => MonadFactory env n m | m -> env n where
+  -- | Return the environment of the monad.
   getEnv  :: m env
+  -- | Replace the environment inside the monad.
   putEnv  :: env -> m ()
+  -- | Produce a resource component, with open and close.
   produce
     :: n component -- ^ Open resource
     -> (component -> n ()) -- ^ Close resource

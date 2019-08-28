@@ -1,7 +1,21 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-module Boots.Client where
+module Boots.Factory.Client(
+    ManagerSettings
+  , Manager
+  , newManager
+  , managerConnCount
+  , managerRawConnection
+  , managerTlsConnection
+  , managerResponseTimeout
+  , managerRetryableException
+  , managerWrapException
+  , managerIdleConnectionCount
+  , managerModifyRequest
+  , managerModifyResponse
+  , managerLogException
+  ) where
 
 import           Boots
 import           Network.HTTP.Client hiding (Proxy)
