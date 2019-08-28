@@ -5,6 +5,7 @@
 module Main where
 
 import           Boots
+import           Boots.Consul
 import           Boots.Web
 import           Paths_boots_web (version)
 import           Servant
@@ -19,6 +20,6 @@ main = bootWeb
   Paths_boots_web.version
   id
   (:. EmptyContext)
-  (\_ _ -> return ())
+  (\_ _ -> buildConsul)
   (Proxy @API)
   apiServer

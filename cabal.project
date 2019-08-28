@@ -4,3 +4,4 @@ packages:
   boots
   boots-app
   boots-web
+  boots-consul

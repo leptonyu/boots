@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7ef083db0d0bd5271314000db11d0349c493c132231be2e4df0d401142772f26
+-- hash: 1803d1346f0dcf8a6159e14380fb236f138b72f2d63805454fc907658639ad66
 
 name:           boots-web
 version:        0.2
@@ -65,20 +65,4 @@ library
     , vault >=0.3.1 && <0.4
     , wai >=3.2.2 && <3.3
     , warp >=3.2.28 && <3.4
-  default-language: Haskell2010
-
-executable demo-web
-  main-is: Main.hs
-  other-modules:
-      Paths_boots_web
-  hs-source-dirs:
-      demo
-  default-extensions: RecordWildCards ScopedTypeVariables
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded
-  build-depends:
-      base >=4.10 && <5
-    , boots-app >=0.2 && <0.3
-    , boots-web >=0.2 && <0.3
-    , servant-server >=0.16.2 && <0.17
-    , time >=1.8.0 && <1.10
   default-language: Haskell2010
