@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Boots.Prelude(
   -- * Reexport
     rightToMaybe
@@ -10,6 +11,7 @@ module Boots.Prelude(
   , Lens'
   , lens
   , (&)
+  , Monoid(..)
   , Proxy(..)
   , Default(..)
   ) where
@@ -20,6 +22,9 @@ import           Data.Proxy
 import           Data.String
 import           Lens.Micro
 import           Lens.Micro.Extras
+#if __GLASGOW_HASKELL__ < 804
+import           Data.Semigroup
+#endif
 
 rightToMaybe :: Either a b -> Maybe b
 rightToMaybe (Left  _) = Nothing

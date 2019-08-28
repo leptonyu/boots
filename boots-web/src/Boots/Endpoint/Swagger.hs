@@ -1,15 +1,19 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
 module Boots.Endpoint.Swagger where
 
-import qualified Data.Swagger as S
-import           Data.Text    (Text, pack)
-import           Data.Version (Version, showVersion)
+import qualified Data.Swagger   as S
+import           Data.Text      (Text, pack)
+import           Data.Version   (Version, showVersion)
 import           Data.Word
 import           Lens.Micro
 import           Servant
+#if __GLASGOW_HASKELL__ < 804
+import           Data.Semigroup
+#endif
 
 type EndpointSwagger = "endpoints" :> "swagger" :> Get '[JSON] S.Swagger
 
