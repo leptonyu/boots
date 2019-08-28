@@ -6,6 +6,7 @@ category:            Library, Application, Configuration, Logger, Health, Random
 <<: *legal
 extra-source-files:
 - README.md
+- CHANGELOG.md
 
 dependencies:
   - base          >= 4.10   && < 5

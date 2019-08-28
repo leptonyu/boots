@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aeba62445f74b86f001565e29c9a2070024a8008a56eaa0bd8c163de9f465940
+-- hash: dd3b3d8a814864a3ded34bf754c84e4fa60b995aa9b54cabe066738f0570ea46
 
 name:           boots-cloud
 version:        0.2
@@ -20,6 +20,7 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
+    CHANGELOG.md
 
 library
   exposed-modules:
