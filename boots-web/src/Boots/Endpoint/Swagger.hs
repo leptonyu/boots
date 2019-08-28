@@ -1,12 +1,13 @@
-{-# LANGUAGE DataKinds ,CPP        #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
 module Boots.Endpoint.Swagger where
 
-import qualified Data.Swagger as S
-import           Data.Text    (Text, pack)
-import           Data.Version (Version, showVersion)
+import qualified Data.Swagger   as S
+import           Data.Text      (Text, pack)
+import           Data.Version   (Version, showVersion)
 import           Data.Word
 import           Lens.Micro
 import           Servant
