@@ -15,6 +15,7 @@
 module Boots.Factory.Web(
     buildWeb
   , WebConfig(..)
+  , HasWebConfig(..)
   , WebEnv(..)
   , EnvMiddleware
   , newWebEnv
@@ -75,6 +76,12 @@ instance FromProp m WebConfig where
     <$> "host" .?: hostname
     <*> "port" .?: port
 
+class HasWebConfig env where
+  askWebConfig :: Lens' env WebConfig
+
+instance HasWebConfig WebConfig where
+  askWebConfig = id
+
 data EndpointConfig = EndpointConfig
   { enabled   :: Bool
   , endpoints :: HM.HashMap Text Bool
@@ -103,6 +110,10 @@ data WebEnv env context = WebEnv
 {-# INLINE askEnv' #-}
 askEnv' :: Lens' (WebEnv env context) env
 askEnv' = lens envs (\x y -> x { envs = y})
+
+
+instance HasWebConfig (WebEnv env context) where
+  askWebConfig = lens config (\x y -> x { config = y})
 
 instance HasMetrics (WebEnv env context) where
   {-# INLINE askMetrics #-}

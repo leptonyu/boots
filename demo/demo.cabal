@@ -1,0 +1,39 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ad4da829212bb7fcbfc32077d733da2d1354f874654f575ab6048a0d27267d04
+
+name:           demo
+version:        0.2
+synopsis:       Web factories.
+description:    Provide web factories base on boots.
+category:       Library, Application
+homepage:       https://github.com/leptonyu/boots#readme
+author:         Daniel YU
+maintainer:     leptonyu@gmail.com
+copyright:      2019 Daniel YU
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+executable demo-web
+  main-is: Main.hs
+  other-modules:
+      Paths_demo
+  hs-source-dirs:
+      ./.
+  default-extensions: RecordWildCards ScopedTypeVariables
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded
+  build-depends:
+      base >=4.10 && <5
+    , boots-app >=0.2 && <0.3
+    , boots-consul >=0.2 && <0.3
+    , boots-web >=0.2 && <0.3
+    , servant-server >=0.16.2 && <0.17
+    , time >=1.8.0 && <1.10
+  default-language: Haskell2010

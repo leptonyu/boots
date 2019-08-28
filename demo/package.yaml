@@ -1,0 +1,22 @@
+_common: !include "../common.yaml"
+name:                demo
+synopsis:            Web factories.
+description:         Provide web factories base on boots.
+<<: *legal
+extra-source-files:
+- README.md
+
+dependencies:
+  - base          >= 4.10   && < 5
+
+executables:
+  demo-web:
+    source-dirs:  .
+    ghc-options: -threaded
+    main: Main.hs
+    dependencies:
+    - boots-app      >= 0.2    && < 0.3
+    - boots-web      >= 0.2    && < 0.3
+    - boots-consul   >= 0.2    && < 0.3
+    - servant-server >= 0.16.2 && < 0.17
+    - time           >= 1.8.0  && < 1.10

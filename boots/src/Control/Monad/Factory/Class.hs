@@ -1,5 +1,13 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+-- |
+-- Module:      Control.Monad.Factory.Class
+-- Copyright:   2019 Daniel YU
+-- License:     MIT
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
 module Control.Monad.Factory.Class(
     MonadFactory(..)
   , defer

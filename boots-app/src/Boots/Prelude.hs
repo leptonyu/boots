@@ -23,7 +23,7 @@ import           Data.String
 import           Lens.Micro
 import           Lens.Micro.Extras
 #if __GLASGOW_HASKELL__ < 804
-import           Data.Semigroup
+import           Data.Semigroup    ()
 #endif
 
 rightToMaybe :: Either a b -> Maybe b
