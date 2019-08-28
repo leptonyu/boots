@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DataKinds ,CPP        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
