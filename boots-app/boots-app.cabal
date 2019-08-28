@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 17a4d40b136abc11c3baf4e094e0f6fcb297ed9c32d14854ddafe7b1a5f5a78f
+-- hash: e33876de9ca580a5786742b6760d9ab692818a0046e44a86cd7720fee11ed9bf
 
 name:           boots-app
-version:        0.2
+version:        0.2.1
 synopsis:       Factory for quickly building an application
 description:    A quick out-of-box factory using to build application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots).
 category:       Library, Application, Configuration, Logger, Health, Random
