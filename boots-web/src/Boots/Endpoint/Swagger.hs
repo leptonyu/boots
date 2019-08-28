@@ -10,6 +10,9 @@ import           Data.Version (Version, showVersion)
 import           Data.Word
 import           Lens.Micro
 import           Servant
+#if __GLASGOW_HASKELL__ < 804
+import           Data.Semigroup
+#endif
 
 type EndpointSwagger = "endpoints" :> "swagger" :> Get '[JSON] S.Swagger
 
@@ -22,6 +25,6 @@ baseInfo
   -> S.Swagger -- ^ Old swagger
   -> S.Swagger
 baseInfo hostName n v p s = s
-  & S.info . S.title   .~ (n ++ " API Documents")
+  & S.info . S.title   .~ (n <> " API Documents")
   & S.info . S.version .~ pack (showVersion v)
   & S.host ?~ S.Host hostName (Just $ fromIntegral p)
