@@ -22,7 +22,6 @@ module Boots.App.Internal(
 import           Control.Monad.Catch
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Reader
-import           Data.Menshen
 import           Unsafe.Coerce           (unsafeCoerce)
 
 -- | Application monad transformation.
@@ -52,6 +51,4 @@ instance MonadUnliftIO m => MonadUnliftIO (AppT env m) where
     AppT $ ReaderT $ \r ->
     withRunInIO $ \run ->
     inner (run . runAppT r)
-
-instance MonadThrow m => HasValid (AppT env m)
 

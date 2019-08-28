@@ -1,3 +1,2 @@
 import System.Environment
 setEnv "logging.level" "trace"
-setEnv "logging.async" "false"

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 17a4d40b136abc11c3baf4e094e0f6fcb297ed9c32d14854ddafe7b1a5f5a78f
+-- hash: 0e2fa7e8f358914d3f5670bc6bd63d59e07106c43c3888be67016c7b27b0d8e1
 
 name:           boots-app
-version:        0.2
+version:        0.2.0.1
 synopsis:       Factory for quickly building an application
 description:    A quick out-of-box factory using to build application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots).
 category:       Library, Application, Configuration, Logger, Health, Random
@@ -40,12 +40,11 @@ library
   default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
-      base >=4.10 && <5
+      base >=4.9 && <5
     , boots >=0.2 && <0.3
     , data-default >=0.7.1 && <0.8
     , exceptions >=0.10.2 && <0.11
     , fast-logger >=2.4.16 && <2.5
-    , menshen >=0.0.3 && <0.1
     , microlens >=0.4.10 && <0.5
     , mtl >=2.2.2 && <2.3
     , salak >=0.3.5 && <0.4
@@ -65,7 +64,7 @@ executable demo-app
   default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -rtsopts -threaded -with-rtsopts=-K1K
   build-depends:
-      base >=4.10 && <5
+      base >=4.9 && <5
     , boots-app
     , time >=1.8.0 && <1.10
   default-language: Haskell2010

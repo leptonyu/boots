@@ -1,5 +1,14 @@
 -- see https://cabal.readthedocs.io/en/latest/nix-local-build-overview.html
 
+allow-newer:
+  base
+  servant
+  servant-client
+  servant-client-core
+  servant-server
+  servant-swagger
+  template-haskell
+
 packages:
   boots
   boots-app

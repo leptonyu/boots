@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 -- |
 -- Module:      Boots
 -- Copyright:   2019 Daniel YU
@@ -16,8 +17,11 @@
 -- 5. Define standard application values, such that @name@, @version@.
 --
 module Boots(
+  -- * Environment
+    Env(..)
+  , HasEnv
   -- * Monad App
-    module Boots.App
+  , module Boots.App
   -- * Factory Instances
   , module Boots.Factory.Application
   , module Boots.Factory.Salak
@@ -38,6 +42,37 @@ import           Boots.Health
 import           Boots.Prelude
 import           Boots.Random
 import           Control.Monad.Factory
+
+-- | Extensible environment, which wrap `AppEnv` and can hold extra environments.
+data Env ext = Env
+  { app :: AppEnv -- ^ Application environment
+  , ext :: ext -- ^ Extensible environments.
+  }
+
+-- | Unified constraints for application environment.
+type HasEnv env = (HasApp env, HasLogger env, HasSalak env, HasRandom env, HasHealth env)
+
+instance HasApp (Env ext) where
+  askApp = lens app (\x y -> x {app = y})
+  {-# INLINE askApp #-}
+instance HasLogger (Env ext) where
+  askLogger = askApp . askLogger
+  {-# INLINE askLogger #-}
+instance HasSalak (Env ext) where
+  askSalak = askApp . askSalak
+  {-# INLINE askSalak #-}
+instance HasRandom (Env ext) where
+  askRandom = askApp . askRandom
+  {-# INLINE askRandom #-}
+instance HasHealth (Env ext) where
+  askHealth = askApp . askHealth
+  {-# INLINE askHealth #-}
+
+
+
+
+
+
 
 
 

@@ -1,1 +1,1 @@
---command "stack ghci --test --bench --profile --main-is demo:exe:demo-web" --reload . --restart common.yaml --restart */package.yaml --test main 
+--command "stack ghci --test --bench --main-is demo:exe:demo-web" --reload . --restart common.yaml --restart */package.yaml --test main 

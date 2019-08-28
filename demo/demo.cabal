@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b0ffd5fbb36802e6ef9c2b3fba39a68f91326880a3e2b1698d9e4cf986520258
+-- hash: 04606539f8dbf613ef3f1b6929de01fec924fc71f1ec5e05bd9333395841f385
 
 name:           demo
-version:        0.2
+version:        0.2.0.1
 synopsis:       Web factories.
 description:    Provide web factories base on boots.
 homepage:       https://github.com/leptonyu/boots#readme
@@ -29,7 +29,7 @@ executable demo-web
   default-extensions: RecordWildCards ScopedTypeVariables
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures -threaded
   build-depends:
-      base >=4.10 && <5
+      base >=4.9 && <5
     , boots-app >=0.2 && <0.3
     , boots-cloud >=0.2 && <0.3
     , boots-web >=0.2 && <0.3
