@@ -75,8 +75,9 @@ bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
     conf  <- require "application"
     ec    <- require "endpoints"
     store <- liftIO newStore
-    env   <- fenv
     cxt   <- fcxt
+    -- fcxt must call before env, which maybe affect env.
+    env   <- fenv
     logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
     let
       c = newWebEnv env cxt conf ec store :: WebEnv env context
@@ -103,8 +104,9 @@ bootWebEnv name ver makeExt mid
   = bootWeb name ver go (return (:. EmptyContext)) (\_ _ -> mid) (Proxy @EmptyAPI) emptyServer
   where
     go = do
-      app <- getEnv
       ext <- makeExt
+      -- App should get after ext, for makeExt may change AppEnv
+      app <- getEnv
       return Env{..}
 
 
