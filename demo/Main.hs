@@ -12,14 +12,11 @@ import           Servant
 
 type API = "hello" :> Get '[JSON] NoContent
 
-apiServer :: ServerT API (App AppEnv)
+type AppE = (App (Env Int))
+
+apiServer :: ServerT API AppE
 apiServer = logInfo "Hello" >> return NoContent
 
-main = bootWeb
-  "demo"
-  Paths_demo.version
-  id
-  (:. EmptyContext)
-  (\_ _ -> buildConsul)
-  (Proxy @API)
-  apiServer
+main = bootWebEnv "demo" Paths_demo.version (return 1) $ do
+  buildConsul
+  tryServeWithSwagger True (Proxy @'[Env Int]) (Proxy @API) apiServer

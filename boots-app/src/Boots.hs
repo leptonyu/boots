@@ -20,6 +20,7 @@ module Boots(
   -- * Environment
     Env(..)
   , HasEnv
+  , askExt
   -- * Monad App
   , module Boots.App
   -- * Factory Instances
@@ -48,6 +49,10 @@ data Env ext = Env
   { app :: AppEnv -- ^ Application environment
   , ext :: ext -- ^ Extensible environments.
   }
+
+-- | Lens for ext.
+askExt :: Lens' (Env ext) ext
+askExt = lens ext (\x y -> x { ext = y })
 
 -- | Unified constraints for application environment.
 type HasEnv env = (HasApp env, HasLogger env, HasSalak env, HasRandom env, HasHealth env)

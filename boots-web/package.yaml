@@ -43,6 +43,7 @@ library:
     - microlens            >= 0.4.10 && < 0.5
     - monad-logger         >= 0.3.30  && < 0.4
     - salak                >= 0.3.5   && < 0.4
+    - servant              >= 0.16.2  && < 0.17
     - servant-server       >= 0.16.2  && < 0.17
     - servant-swagger      >= 1.1.7.1 && < 1.2
     - swagger2             >= 2.4     && < 2.5
