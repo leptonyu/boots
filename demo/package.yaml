@@ -7,7 +7,7 @@ extra-source-files:
 - README.md
 
 dependencies:
-  - base          >= 4.10   && < 5
+  - base >= 4.9 && < 5
 
 executables:
   demo-web:

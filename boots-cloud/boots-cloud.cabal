@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e0f11b552e530e0edd294cc4222b1923d8b52446b5b54b74d889b1c2ee01581e
+-- hash: d6226149edbd3ba149c31e8ed318e2de39e0aac272d47a78e9188d2978bb321d
 
 name:           boots-cloud
-version:        0.2.1
+version:        0.2.0.1
 synopsis:       Factory for quickly building a microservice
 description:    A quick out-of-box factory using to build microservices with many useful builtin components based on [boots-web](https://hackage.haskell.org/package/boots-web).
 category:       Library, Application, Servant, Swagger, Web, Microservice, Consul
@@ -35,7 +35,7 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson >=1.4.4 && <1.5
-    , base >=4.10 && <5
+    , base >=4.9 && <5
     , boots >=0.2 && <0.3
     , boots-app >=0.2 && <0.3
     , boots-web >=0.2 && <0.3

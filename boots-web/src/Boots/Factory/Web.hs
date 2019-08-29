@@ -143,13 +143,7 @@ instance HasHealth env => HasHealth (WebEnv env context) where
   askHealth = askEnv' . askHealth
 
 -- | Unified constraints for web environment.
-type HasWeb context env =
-  ( HasApp env
-  , HasLogger env
-  , HasHealth env
-  , HasRandom env
-  , HasSalak env
-  , HasContextEntry context env)
+type HasWeb context env = (HasEnv env, HasContextEntry context env)
 
 -- | Class type used to modify @context@ entries.
 class HasContextEntry context env => SetContextEntry context env where
