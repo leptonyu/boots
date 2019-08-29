@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8aa8086a14aeeaf438b6ea39c7838b3b53665107cc97420c935e2e298d73904c
+-- hash: cfea50df83f30554fea64126b73c946cfec7aa6a26123f08d1ddbc035b1a12f4
 
 name:           boots-web
 version:        0.2.0.1
@@ -55,6 +55,7 @@ library
     , microlens >=0.4.10 && <0.5
     , monad-logger >=0.3.30 && <0.4
     , salak >=0.3.5 && <0.4
+    , servant >=0.16.2 && <0.17
     , servant-server >=0.16.2 && <0.17
     , servant-swagger >=1.1.7.1 && <1.2
     , swagger2 >=2.4 && <2.5
