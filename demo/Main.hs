@@ -18,8 +18,8 @@ apiServer = logInfo "Hello" >> return NoContent
 main = bootWeb
   "demo"
   Paths_demo.version
-  id
-  (:. EmptyContext)
+  getEnv
+  (return (:. EmptyContext))
   (\_ _ -> buildConsul)
   (Proxy @API)
   apiServer

@@ -22,6 +22,7 @@
 module Boots.Web(
   -- * Boot web
     bootWeb
+  , runContext
   , module Boots.Factory.Web
   -- * Metrics
   , module Boots.Metrics
@@ -46,6 +47,11 @@ import           Boots.Factory.Trace
 import           Boots
 import           Data.Version           (Version)
 
+
+-- | Run context.
+runContext :: HasContextEntry context env => Context context -> AppT env m () -> m ()
+runContext = runAppT . getContextEntry
+
 -- | A out-of-box web application booter with many predefined components.
 bootWeb
   :: forall api env context
@@ -54,8 +60,8 @@ bootWeb
     , HasWeb context env)
   => String -- ^ Application name.
   -> Version -- ^ Application version.
-  -> (AppEnv -> env) -- ^ Function which generates @env@ using `AppEnv`.
-  -> (env -> Context context) -- ^ Function which generates @context@ using @env@.
+  -> Factory IO AppEnv env -- ^ Function which generates @env@ using `AppEnv`.
+  -> Factory IO AppEnv (env -> Context context) -- ^ Function which generates @context@ using @env@.
   -> (Proxy context -> Proxy env -> Factory IO (WebEnv env context) ()) -- ^ Customized `Factory`.
   -> Proxy api -- ^ Api proxy.
   -> ServerT api (App env) -- ^ Servant api server.
@@ -66,14 +72,11 @@ bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
     conf  <- require "application"
     ec    <- require "endpoints"
     store <- liftIO newStore
+    env   <- fenv
+    cxt   <- fcxt
     logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
     let
-      c = newWebEnv
-         (fenv app)
-         fcxt
-         conf
-         ec
-         store :: WebEnv env context
+      c = newWebEnv env cxt conf ec store :: WebEnv env context
       pe = Proxy @env
       pc = Proxy @context
     within c $ do
