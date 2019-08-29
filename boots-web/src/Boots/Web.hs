@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 -- |
@@ -22,6 +23,7 @@
 module Boots.Web(
   -- * Boot web
     bootWeb
+  , bootWebEnv
   , runContext
   , module Boots.Factory.Web
   -- * Metrics
@@ -46,7 +48,8 @@ import           Boots.Factory.Trace
 
 import           Boots
 import           Data.Version           (Version)
-
+import           Servant.API
+import           Servant.Server
 
 -- | Run context.
 runContext :: HasContextEntry context env => Context context -> AppT env m () -> m ()
@@ -88,3 +91,20 @@ bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
       buildRandom    pc pe
       buildEndpoints pc pe
       buildWeb       pc pe
+
+-- | A out-of-box web application booter with many predefined components. A more generic version use `bootWeb`
+bootWebEnv
+  :: String
+  -> Version
+  -> Factory IO AppEnv ext
+  -> Factory IO (WebEnv (Env ext) '[Env ext]) ()
+  -> IO ()
+bootWebEnv name ver makeExt mid
+  = bootWeb name ver go (return (:. EmptyContext)) (\_ _ -> mid) (Proxy @EmptyAPI) emptyServer
+  where
+    go = do
+      app <- getEnv
+      ext <- makeExt
+      return Env{..}
+
+
