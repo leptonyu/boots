@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0e2fa7e8f358914d3f5670bc6bd63d59e07106c43c3888be67016c7b27b0d8e1
+-- hash: 68f18d0ba59fdf84c49aae90e86cd747ce7eddf802b2dcb173eb056719519406
 
 name:           boots-app
 version:        0.2.0.1
@@ -25,6 +25,7 @@ extra-source-files:
 library
   exposed-modules:
       Boots
+      Boots.CLI
   other-modules:
       Boots.App
       Boots.Health
@@ -47,6 +48,7 @@ library
     , fast-logger >=2.4.16 && <2.5
     , microlens >=0.4.10 && <0.5
     , mtl >=2.2.2 && <2.3
+    , optparse-applicative >=0.14.3 && <0.16
     , salak >=0.3.5 && <0.4
     , salak-yaml >=0.3.5 && <0.4
     , splitmix >=0.0.3 && <0.1

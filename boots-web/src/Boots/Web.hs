@@ -65,33 +65,32 @@ bootWeb
   -> Version -- ^ Application version.
   -> Factory IO AppEnv env -- ^ Function which generates @env@ using `AppEnv`.
   -> Factory IO AppEnv (env -> Context context) -- ^ Function which generates @context@ using @env@.
-  -> (Proxy context -> Proxy env -> Factory IO (WebEnv env context) ()) -- ^ Customized `Factory`.
+  -> Factory IO (WebEnv env context) () -- ^ Customized `Factory`.
   -> Proxy api -- ^ Api proxy.
   -> ServerT api (App env) -- ^ Servant api server.
   -> IO ()
-bootWeb appName ver fenv fcxt buildCustom api server = boot $ do
-  app  <- buildApp appName ver
-  within app $ do
-    conf  <- require "application"
-    ec    <- require "endpoints"
-    store <- liftIO newStore
-    cxt   <- fcxt
-    -- fcxt must call before env, which maybe affect env.
-    env   <- fenv
-    logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
-    let
-      c = newWebEnv env cxt conf ec store :: WebEnv env context
-      pe = Proxy @env
-      pc = Proxy @context
-    within c $ do
-      tryServeWithSwagger True  pc api server
-      buildError     pc pe
-      buildCustom    pc pe
-      buildWebLogger pc pe
-      buildTrace     pc pe
-      buildRandom    pc pe
-      buildEndpoints pc pe
-      buildWeb       pc pe
+bootWeb appName ver fenv fcxt buildCustom api server = bootApp appName ver $ do
+  app   <- getEnv
+  conf  <- require "application"
+  ec    <- require "endpoints"
+  store <- liftIO newStore
+  cxt   <- fcxt
+  -- fcxt must call before env, which maybe affect env.
+  env   <- fenv
+  logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
+  let
+    c = newWebEnv env cxt conf ec store :: WebEnv env context
+    pe = Proxy @env
+    pc = Proxy @context
+  within c $ do
+    tryServeWithSwagger True  pc api server
+    buildError     pc pe
+    buildCustom
+    buildWebLogger pc pe
+    buildTrace     pc pe
+    buildRandom    pc pe
+    buildEndpoints pc pe
+    buildWeb       pc pe
 
 -- | A out-of-box web application booter with many predefined components. A more generic version use `bootWeb`
 bootWebEnv
@@ -101,7 +100,7 @@ bootWebEnv
   -> Factory IO (WebEnv (Env ext) '[Env ext]) ()
   -> IO ()
 bootWebEnv name ver makeExt mid
-  = bootWeb name ver go (return (:. EmptyContext)) (\_ _ -> mid) (Proxy @EmptyAPI) emptyServer
+  = bootWeb name ver go (return (:. EmptyContext)) mid (Proxy @EmptyAPI) emptyServer
   where
     go = do
       ext <- makeExt

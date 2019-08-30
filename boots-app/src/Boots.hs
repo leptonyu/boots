@@ -21,6 +21,7 @@ module Boots(
     Env(..)
   , HasEnv
   , askExt
+  , bootApp
   -- * Monad App
   , module Boots.App
   -- * Factory Instances
@@ -30,12 +31,15 @@ module Boots(
   -- * Components
   , module Boots.Health
   , module Boots.Random
+  -- * CLI
+  , module Boots.CLI
   -- * Reexport
   , module Control.Monad.Factory
   , module Boots.Prelude
   ) where
 
 import           Boots.App
+import           Boots.CLI
 import           Boots.Factory.Application
 import           Boots.Factory.Logger
 import           Boots.Factory.Salak
@@ -43,6 +47,7 @@ import           Boots.Health
 import           Boots.Prelude
 import           Boots.Random
 import           Control.Monad.Factory
+import           Data.Version              (Version)
 
 -- | Extensible environment, which wrap `AppEnv` and can hold extra environments.
 data Env ext = Env
@@ -73,8 +78,15 @@ instance HasHealth (Env ext) where
   askHealth = askApp . askHealth
   {-# INLINE askHealth #-}
 
-
-
+-- | An out-of-box application booter, with builtin components. Also supports a default commandline handling.
+bootApp
+  :: String -- ^ name
+  -> Version -- ^ version
+  -> Factory IO AppEnv (IO ()) -- ^ Application body.
+  -> IO ()
+bootApp name version fac = runCLI $ \CLI{..} -> boot $ do
+  app <- buildApp name version (Just $ const $ return $ options)
+  within app fac
 
 
 
