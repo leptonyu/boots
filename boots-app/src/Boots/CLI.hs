@@ -11,7 +11,7 @@ import           Data.Text           (Text)
 import           Options.Applicative
 #if __GLASGOW_HASKELL__ < 804
 import           Control.Applicative
-import           Data.Semigroup      ()
+import           Data.Semigroup
 #endif
 
 -- | Options parsed from arguments.
