@@ -1,9 +1,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE TupleSections          #-}
 module Boots.Random(
     RD(..)
   , HasRandom(..)
@@ -32,7 +30,7 @@ import           Salak
 import           System.Random.SplitMix
 
 -- | Random value generator.
-data RD = RD { unRD :: forall a. (SMGen -> (a, SMGen)) -> IO a }
+newtype RD = RD { unRD :: forall a. (SMGen -> (a, SMGen)) -> IO a }
 
 -- | Seed container type.
 data RDType = RDIORef | RDMVar

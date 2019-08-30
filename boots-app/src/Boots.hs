@@ -18,10 +18,7 @@
 --
 module Boots(
   -- * Environment
-    Env(..)
-  , HasEnv
-  , askExt
-  , bootApp
+    bootApp
   -- * Monad App
   , module Boots.App
   -- * Factory Instances
@@ -49,47 +46,19 @@ import           Boots.Random
 import           Control.Monad.Factory
 import           Data.Version              (Version)
 
--- | Extensible environment, which wrap `AppEnv` and can hold extra environments.
-data Env ext = Env
-  { app :: AppEnv -- ^ Application environment
-  , ext :: ext -- ^ Extensible environments.
-  }
-
--- | Lens for ext.
-askExt :: Lens' (Env ext) ext
-askExt = lens ext (\x y -> x { ext = y })
-
--- | Unified constraints for application environment.
-type HasEnv env = (HasApp env, HasLogger env, HasSalak env, HasRandom env, HasHealth env)
-
-instance HasApp (Env ext) where
-  askApp = lens app (\x y -> x {app = y})
-  {-# INLINE askApp #-}
-instance HasLogger (Env ext) where
-  askLogger = askApp . askLogger
-  {-# INLINE askLogger #-}
-instance HasSalak (Env ext) where
-  askSalak = askApp . askSalak
-  {-# INLINE askSalak #-}
-instance HasRandom (Env ext) where
-  askRandom = askApp . askRandom
-  {-# INLINE askRandom #-}
-instance HasHealth (Env ext) where
-  askHealth = askApp . askHealth
-  {-# INLINE askHealth #-}
-
 -- | An out-of-box application booter, with builtin components. Also supports a default commandline handling.
 bootApp
   :: String -- ^ name
   -> Version -- ^ version
-  -> Factory IO AppEnv (IO ()) -- ^ Application body.
+  -> Factory IO (AppEnv ()) env -- ^ Generate env
+  -> Factory IO (AppEnv env) (IO ()) -- ^ Application body.
   -> IO ()
-bootApp name version fac = runCLI version $ \cli -> boot $ do
-  app <- buildApp name version (Just cli)
-  within app fac
-
-
-
-
-
-
+bootApp n ver fext fac = runCLI ver
+  $ \cli -> boot
+  $ buildApp n ver cli () >>> go >>> fac
+  where
+    {-# INLINE go #-}
+    go = do
+      ext1       <- fext
+      AppEnv{..} <- getEnv
+      return AppEnv{ext = ext1, ..}

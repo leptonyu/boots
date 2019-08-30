@@ -15,14 +15,15 @@ import           Network.Consul
 
 -- | Register consule service.
 buildConsul
-  :: (MonadMask n, MonadIO n, HasSalak env, HasApp env, HasLogger env)
+  :: (MonadMask n, MonadIO n)
   => Factory n (WebEnv env context) ()
 buildConsul = tryBuildByKey False "consul.enabled" $ do
-  AppEnv{..}          <- asksEnv (view askApp)
-  WebConfig{..}       <- view askWebConfig <$> getEnv
+  WebEnv{..}          <- getEnv
   mst                 <- require "consul.client"
   cc@ConsulConfig{..} <- require "consul"
   let
+    AppEnv{..}    = envs
+    WebConfig{..} = config
     ConsulApi{..} = consulApi cc mst
     met2 = HM.insert "version" (fromString $ showVersion version) meta
     open = registerService

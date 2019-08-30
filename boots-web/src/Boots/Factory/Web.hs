@@ -1,20 +1,20 @@
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Boots.Factory.Web(
     buildWeb
-  , HasWeb
+  , HasWeb(..)
   -- ** Configuration
   , HasWebConfig(..)
   , WebConfig(..)
@@ -36,7 +36,6 @@ module Boots.Factory.Web(
   , HasContextEntry(..)
   , SetContextEntry(..)
   , Context(..)
-  , askContext
   , logException
   , whenException
   , ToSchema
@@ -108,16 +107,12 @@ data WebEnv env context = WebEnv
                => Proxy api -> Swagger
               -- ^ A wrapper of `toSwagger`.
   , middleware :: EnvMiddleware env -- ^ Modified middleware.
-  , envs       :: env -- ^ Application environment.
-  , context    :: env -> Context context -- ^ Function used to generate @context@ from @env.
+  , envs       :: AppEnv env -- ^ Application environment.
+  , context    :: AppEnv env -> Context context -- ^ Function used to generate @context@ from @env.
   , config     :: WebConfig -- ^ Web configuration.
   , endpoint   :: EndpointConfig -- ^ Endpoint configuration.
   , store      :: Store -- ^ Metrics store.
   }
-
-{-# INLINE askEnv' #-}
-askEnv' :: Lens' (WebEnv env context) env
-askEnv' = lens envs (\x y -> x { envs = y})
 
 -- | Environment values with `WebEnv`.
 instance HasWebConfig (WebEnv env context) where
@@ -126,24 +121,30 @@ instance HasWebConfig (WebEnv env context) where
 instance HasMetrics (WebEnv env context) where
   {-# INLINE askMetrics #-}
   askMetrics = lens store (\x y -> x { store = y})
-instance HasSalak env => HasSalak (WebEnv env context) where
-  {-# INLINE askSalak #-}
-  askSalak = askEnv' . askSalak
-instance HasLogger env => HasLogger (WebEnv env context) where
-  {-# INLINE askLogger #-}
-  askLogger = askEnv' . askLogger
-instance HasRandom env => HasRandom (WebEnv env context) where
-  {-# INLINE askRandom #-}
-  askRandom = askEnv' . askRandom
-instance HasApp env => HasApp (WebEnv env context) where
+instance HasApp (WebEnv env context) env where
   {-# INLINE askApp #-}
-  askApp = askEnv' . askApp
-instance HasHealth env => HasHealth (WebEnv env context) where
+  askApp = lens envs (\x y -> x { envs = y})
+instance HasSalak (WebEnv env context) where
+  {-# INLINE askSalak #-}
+  askSalak = askApp @(WebEnv env context) @env . askSalak
+instance HasLogger (WebEnv env context) where
+  {-# INLINE askLogger #-}
+  askLogger = askApp @(WebEnv env context) @env . askLogger
+instance HasRandom (WebEnv env context) where
+  {-# INLINE askRandom #-}
+  askRandom = askApp @(WebEnv env context) @env . askRandom
+instance HasHealth (WebEnv env context) where
   {-# INLINE askHealth #-}
-  askHealth = askEnv' . askHealth
+  askHealth = askApp @(WebEnv env context) @env . askHealth
 
--- | Unified constraints for web environment.
-type HasWeb context env = (HasEnv env, HasContextEntry context env)
+class
+  ( HasContextEntry context (AppEnv env)
+  , SetContextEntry context (AppEnv env))
+  => HasWeb context env | context -> env where
+  askWeb :: Lens' (Context context) (AppEnv env)
+  askWeb = lens getContextEntry (flip setContextEntry)
+
+instance HasWeb (AppEnv env : as) env
 
 -- | Class type used to modify @context@ entries.
 class HasContextEntry context env => SetContextEntry context env where
@@ -157,27 +158,21 @@ instance SetContextEntry (env : as) env where
   {-# INLINE setContextEntry #-}
   setContextEntry env (_ :. as) = env :. as
 
--- | Lens for modify @env@ in @context@.
-{-# INLINE askContext #-}
-askContext :: SetContextEntry context env => Lens' (Context context) env
-askContext = lens getContextEntry (flip setContextEntry)
-
-instance (SetContextEntry context env, HasSalak env) => HasSalak (Context context) where
-  {-# INLINE askSalak #-}
-  askSalak = askContext @context @env . askSalak
-instance (SetContextEntry context env, HasLogger env) => HasLogger (Context context) where
-  {-# INLINE askLogger #-}
-  askLogger = askContext @context @env . askLogger
-instance (SetContextEntry context env, HasRandom env) => HasRandom (Context context) where
-  {-# INLINE askRandom #-}
-  askRandom = askContext @context @env . askRandom
+instance HasWeb context env => HasApp (Context context) env where
+  askApp = askWeb @context @env
+instance HasWeb context env => HasSalak (Context context) where
+  askSalak = askWeb @context @env . askSalak
+instance HasWeb context env => HasLogger (Context context) where
+  askLogger = askWeb @context @env . askLogger
+instance HasWeb context env => HasRandom (Context context) where
+  askRandom = askWeb @context @env . askRandom
 
 -- | Create a web environment.
 {-# INLINE newWebEnv #-}
 newWebEnv
-  :: (HasContextEntry context env, HasLogger env)
-  => env -- ^ Application environment.
-  -> (env -> Context context) -- ^ Function used to generate @context@ from @env@.
+  :: HasContextEntry context (AppEnv env)
+  => AppEnv env -- ^ Application environment.
+  -> (AppEnv env -> Context context) -- ^ Function used to generate @context@ from @env@.
   -> WebConfig -- ^ Web configuration.
   -> EndpointConfig -- ^ Endpoint configuration.
   -> Store -- ^ Metrics store.
@@ -186,11 +181,11 @@ newWebEnv = WebEnv serveWithContext toSwagger id
 
 -- | Get application environment @env@.
 {-# INLINE askEnv #-}
-askEnv :: MonadMask n => Factory n (WebEnv env context) env
+askEnv :: MonadMask n => Factory n (WebEnv env context) (AppEnv env)
 askEnv = envs <$> getEnv
 
 -- | Modified wai `Middleware`, which support modify @env@.
-type EnvMiddleware env = (env -> Application) -> env -> Application
+type EnvMiddleware env = (AppEnv env -> Application) -> AppEnv env -> Application
 
 -- | Register a modified middleware.
 {-# INLINE registerMiddleware #-}
@@ -213,8 +208,8 @@ buildWeb
 buildWeb _ _ = do
   (WebEnv{..} :: WebEnv env context) <- getEnv
   within envs $ do
-    AppEnv{..}        <- asksEnv (view askApp)
-    let serveWarp WebConfig{..} = runSettings
+    let AppEnv{..} = envs
+        serveWarp WebConfig{..} = runSettings
           $ defaultSettings
           & setPort (fromIntegral port)
           & setOnExceptionResponse whenException
@@ -258,14 +253,14 @@ formatException e = case fromException e of
 -- | Serve web server with swagger.
 tryServeWithSwagger
   :: forall env context api n
-  . ( HasContextEntry context env
+  . ( HasContextEntry context (AppEnv env)
     , HasServer api context
     , HasSwagger api
     , MonadMask n)
   => Bool -- ^ If do this action.
   -> Proxy context -- ^ Context proxy.
   -> Proxy api -- ^ Api proxy.
-  -> ServerT api (App env) -- ^ Api server.
+  -> ServerT api (App (AppEnv env)) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
 tryServeWithSwagger b pc proxy server = do
   trySwagger b    proxy
@@ -277,23 +272,23 @@ trySwagger
   => Bool -- ^ If do this action.
   -> Proxy api -- ^ Api proxy.
   -> Factory n (WebEnv env context) ()
-trySwagger b api = tryBuild b $ modifyEnv $ \web -> web { serveA = serveA web . gop api }
+trySwagger b api = when b $ modifyEnv $ \web -> web { serveA = serveA web . gop api }
 
 -- | Try serve a web server.
 tryServe
   :: forall env context api n
-  . ( HasContextEntry context env
+  . ( HasContextEntry context (AppEnv env)
     , HasServer api context
     , MonadMask n)
   => Bool -- ^ If do this action.
   -> Proxy context -- ^ Context proxy.
   -> Proxy api -- ^ Api proxy.
-  -> ServerT api (App env) -- ^ Api server.
+  -> ServerT api (App (AppEnv env)) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
-tryServe b pc proxy server = tryBuild b $
+tryServe b pc proxy server = when b $
   modifyEnv
     $ \web -> web { serveW = \p c s -> serveW web (gop p proxy) c
-    $ s :<|> hoistServerWithContext proxy pc (go . runAppT (getContextEntry c :: env)) server }
+    $ s :<|> hoistServerWithContext proxy pc (go . runAppT (getContextEntry c :: AppEnv env)) server }
   where
     {-# INLINE go #-}
     go :: IO a -> Servant.Handler a

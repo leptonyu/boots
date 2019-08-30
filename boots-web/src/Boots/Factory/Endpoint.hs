@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module:      Boots.Factory.Endpoint
@@ -37,8 +38,8 @@ buildEndpoints
   -> Factory n (WebEnv env context) ()
 buildEndpoints pc _ = do
   WebEnv{..} <- getEnv
-  unless   (enabled endpoint) $ logInfo "Endpoint is disabled."
-  tryBuild (enabled endpoint) $ do
+  unless (enabled endpoint) $ logInfo "Endpoint is disabled."
+  when   (enabled endpoint) $ do
     endpointInfo    pc
     endpointLogger  pc
     endpointRefresh pc

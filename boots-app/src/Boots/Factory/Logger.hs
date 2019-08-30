@@ -4,7 +4,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE TypeApplications       #-}
 module Boots.Factory.Logger(
   -- ** Logger
     HasLogger(..)
@@ -182,7 +181,7 @@ data LogEvent = LogEvent
 
 {-# INLINE runLog #-}
 runLog :: (LogStr -> IO ()) -> Writable LogLevel -> LogEvent -> IO ()
-runLog !lf !logLvl !LogEvent{..} = do
+runLog !lf !logLvl LogEvent{..} = do
   lc <- getWritable logLvl
   when (lc <= llevel) $ makeLog lloc >>= lf
   where
@@ -224,7 +223,7 @@ asyncLog lf ll lfail le = do
   void $ forkIO $ loop rc (runLog lf ll)
   return
     ( writeChan rc
-    , (modifyIORef' b (\_ -> False) >> (catch leftc lfail)) `finally` le
+    , (modifyIORef' b (const False) >> catch leftc lfail) `finally` le
     )
 
 -- | Create a new `LogFunc`.
@@ -240,7 +239,7 @@ newLogger name LogConfig{..} = do
     {-# INLINE logFail #-}
     logFail = readMVar logFailM
     {-# INLINE lfail #-}
-    lfail   = \(_::SomeException) -> modifyMVar_ logFailM (return . (+1))
+    lfail (_::SomeException) = modifyMVar_ logFailM (return . (+1))
     {-# INLINE lname #-}
     lname = " [" <> toLogStr name <> "] "
   (execLog,logend) <- if asyncMode
@@ -248,7 +247,7 @@ newLogger name LogConfig{..} = do
     else return (\e -> runLog logf logLvl e `catch` lfail, close)
   let
     {-# INLINE logfunc #-}
-    logfunc ~lloc ~llevel ~llog = execLog LogEvent {..}
+    logfunc lloc llevel llog = execLog LogEvent {..}
   return LogFunc{..}
 
 -- | Add additional trace info into log.

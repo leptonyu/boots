@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses        #-}
 {-# LANGUAGE NoGeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings            #-}
-{-# LANGUAGE TypeApplications             #-}
 {-# LANGUAGE TypeOperators                #-}
 module Network.Consul where
 

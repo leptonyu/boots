@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
 module Boots.CLI(
     CLI(..)
   , interruptCli
@@ -59,7 +58,6 @@ runCLI v f = (execParser go >>= g2) `catch` ge
   where
     go = info (cli <**> helper) fullDesc
     ge CliInterrupt   = return ()
-    g2 CLI{..} = do
-      if cliV
-        then putStrLn $ showVersion v
-        else f $ \_ -> return cOpt
+    g2 CLI{..} = if cliV
+      then putStrLn $ showVersion v
+      else f $ \_ -> return cOpt

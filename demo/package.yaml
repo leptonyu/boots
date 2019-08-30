@@ -21,4 +21,3 @@ executables:
     - boots-web      >= 0.2    && < 0.3
     - boots-cloud    >= 0.2    && < 0.3
     - servant-server >= 0.16.2 && < 0.17
-    - time           >= 1.8.0  && < 1.10
