@@ -1,4 +1,5 @@
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds   #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module:      Boots
 -- Copyright:   2019 Daniel YU
@@ -61,4 +62,5 @@ bootApp n ver fext fac = runCLI ver
     go = do
       ext1       <- fext
       AppEnv{..} <- getEnv
+      logInfo $ "Start Service [" <> toLogStr name <> "] ..."
       return AppEnv{ext = ext1, ..}
