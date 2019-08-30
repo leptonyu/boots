@@ -75,7 +75,6 @@ bootWeb appName ver fenv fcxt buildCustom api server = bootApp appName ver fenv 
   store <- liftIO newStore
   cxt   <- fcxt
   env   <- getEnv
-  logInfo $ "Start Service [" <> toLogStr (name env) <> "] ..."
   let
     c = newWebEnv env cxt conf ec store :: WebEnv env context
     pe = Proxy @env
