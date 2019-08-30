@@ -71,14 +71,20 @@ instance FromProp m AppConfig where
     <*> "random.type" .?= RDMVar
 
 -- | Factory used to build `AppEnv`.
-buildApp :: (MonadIO m, MonadMask m) => String -> Version -> Factory m () AppEnv
-buildApp confName version = do
+buildApp
+  :: (MonadIO m, MonadMask m)
+  => String
+  -> Version
+  -> Maybe ParseCommandLine
+  -> Factory m () AppEnv
+buildApp confName version mcli = do
   mv        <- liftIO $ newIORef []
   -- Initialize salak
   configure <- liftIO $ runSalak def
       { configName = confName
       , loggerF = \c s -> modifyIORef' mv ((c,s):)
       , loadExt = loadByExt YAML
+      , commandLine = fromMaybe (commandLine def) mcli
       } askSourcePack
   -- Read application name
   within configure $ do

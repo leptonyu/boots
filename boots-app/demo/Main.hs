@@ -8,8 +8,9 @@ import           Data.Time
 import           Paths_boots_app (version)
 
 main :: IO ()
-main = running () (buildApp "demo" Paths_boots_app.version) $
-  \e -> runAppT e $ do
+main = bootApp "demo" Paths_boots_app.version $ do
+  env <- getEnv
+  return $ runAppT env $ do
     count <- fromMaybe 1 <$> require "count"
     t0 <- liftIO getCurrentTime
     replicateM_ count $ logInfo "hello"
