@@ -43,6 +43,7 @@ library:
     - unliftio-core        >= 0.1.2  && < 0.2
     - unordered-containers >= 0.2.10 && < 0.3
     - optparse-applicative >= 0.14.3 && < 0.16
+    - megaparsec
 
 executables:
   demo-app:

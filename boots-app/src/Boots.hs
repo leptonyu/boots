@@ -84,8 +84,8 @@ bootApp
   -> Version -- ^ version
   -> Factory IO AppEnv (IO ()) -- ^ Application body.
   -> IO ()
-bootApp name version fac = runCLI $ \CLI{..} -> boot $ do
-  app <- buildApp name version (Just $ const $ return $ options)
+bootApp name version fac = runCLI version $ \cli -> boot $ do
+  app <- buildApp name version (Just cli)
   within app fac
 
 

@@ -2,6 +2,7 @@
 module Boots.Prelude(
     rightToMaybe
   , whenJust
+  , mapLeft
   , when
   , unless
   , IsString(..)
@@ -32,3 +33,7 @@ rightToMaybe (Right b) = Just b
 whenJust :: Applicative f => Maybe a -> (a -> f ()) -> f ()
 whenJust (Just a) f = f a
 whenJust _        _ = pure ()
+
+mapLeft :: (a -> c) -> Either a b -> Either c b
+mapLeft _ (Right a) = Right a
+mapLeft f (Left  a) = Left (f a)
