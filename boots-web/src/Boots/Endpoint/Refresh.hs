@@ -1,10 +1,13 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
-module Boots.Endpoint.Refresh where
+module Boots.Endpoint.Refresh(
+   endpointRefresh
+  ) where
 
 import           Boots
 import           Boots.Endpoint.Class

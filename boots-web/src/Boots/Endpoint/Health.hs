@@ -1,13 +1,12 @@
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
 
-module Boots.Endpoint.Health where
+module Boots.Endpoint.Health(
+    endpointHealth
+  ) where
 
 import           Boots
 import           Boots.Endpoint.Class

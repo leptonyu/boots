@@ -1,10 +1,13 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeOperators              #-}
-module Boots.Endpoint.Logger where
+module Boots.Endpoint.Logger(
+    endpointLogger
+  ) where
 
 import           Boots
 import           Boots.Endpoint.Class

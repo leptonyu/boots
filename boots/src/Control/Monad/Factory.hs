@@ -54,7 +54,6 @@ module Control.Monad.Factory(
   , wrap
   , liftFT
   , natTrans
-  , tryBuild
   -- * Reexport Function
   -- ** Category Arrow
   , (C.>>>)
@@ -144,7 +143,3 @@ natTrans fnm fmn fac = do
   env <- get
   wrap $ \fm -> fnm $ running env fac (fmn . fm)
 {-# INLINE natTrans #-}
-
-{-# INLINE tryBuild #-}
-tryBuild :: Bool -> Factory n env () -> Factory n env ()
-tryBuild b p = if b then p else return ()

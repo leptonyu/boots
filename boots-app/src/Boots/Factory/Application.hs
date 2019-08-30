@@ -1,13 +1,14 @@
-{-# LANGUAGE DuplicateRecordFields  #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TupleSections         #-}
 module Boots.Factory.Application(
   -- ** Application
     HasApp(..)
   , AppEnv(..)
+  , askExt
   , buildApp
   ) where
 
@@ -26,27 +27,27 @@ import           Salak
 import           Salak.Yaml
 
 -- | Environment values with `AppEnv`.
-class HasApp env where
-  askApp :: Lens' env AppEnv
+class HasApp env ext where
+  askApp :: Lens' env (AppEnv ext)
 
-instance HasApp AppEnv where
+instance HasApp (AppEnv ext) ext where
   askApp = id
   {-# INLINE askApp #-}
-instance HasLogger AppEnv where
+instance HasLogger (AppEnv ext) where
   askLogger = lens logFunc (\x y -> x {logFunc = y})
   {-# INLINE askLogger #-}
-instance HasSalak AppEnv where
+instance HasSalak (AppEnv ext) where
   askSalak = lens configure (\x y -> x {configure = y})
   {-# INLINE askSalak #-}
-instance HasRandom AppEnv where
+instance HasRandom (AppEnv ext) where
   askRandom = lens randSeed (\x y -> x {randSeed = y})
   {-# INLINE askRandom #-}
-instance HasHealth AppEnv where
+instance HasHealth (AppEnv ext) where
   askHealth = lens health (\x y -> x {health = y})
   {-# INLINE askHealth #-}
 
 -- | Application environment.
-data AppEnv = AppEnv
+data AppEnv ext = AppEnv
   { name       :: Text      -- ^ Service name.
   , instanceId :: Text      -- ^ Service instance id.
   , version    :: Version   -- ^ Service version.
@@ -54,7 +55,11 @@ data AppEnv = AppEnv
   , configure  :: Salak     -- ^ Configuration function.
   , randSeed   :: RD        -- ^ Random seed.
   , health     :: IO Health -- ^ Health check.
+  , ext        :: ext
   }
+
+askExt :: Lens' (AppEnv ext) ext
+askExt = lens ext (\x y -> x {ext = y})
 
 -- | Application configuration used for customizing `AppEnv`.
 data AppConfig = AppConfig
@@ -75,16 +80,17 @@ buildApp
   :: (MonadIO m, MonadMask m)
   => String
   -> Version
-  -> Maybe ParseCommandLine
-  -> Factory m () AppEnv
-buildApp confName version mcli = do
+  -> ParseCommandLine
+  -> ext
+  -> Factory m () (AppEnv ext)
+buildApp confName version mcli ext = do
   mv        <- liftIO $ newIORef []
   -- Initialize salak
   configure <- liftIO $ runSalak def
       { configName = confName
       , loggerF = \c s -> modifyIORef' mv ((c,s):)
       , loadExt = loadByExt YAML
-      , commandLine = fromMaybe (commandLine def) mcli
+      , commandLine = mcli
       } askSourcePack
   -- Read application name
   within configure $ do

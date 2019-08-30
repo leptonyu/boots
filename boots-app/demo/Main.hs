@@ -8,7 +8,7 @@ import           Data.Time
 import           Paths_boots_app (version)
 
 main :: IO ()
-main = bootApp "demo" Paths_boots_app.version $ do
+main = bootApp "demo" Paths_boots_app.version (return ()) $ do
   env <- getEnv
   return $ runAppT env $ do
     count <- fromMaybe 1 <$> require "count"

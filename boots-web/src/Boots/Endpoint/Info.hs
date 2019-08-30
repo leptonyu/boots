@@ -6,7 +6,9 @@
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
 
-module Boots.Endpoint.Info where
+module Boots.Endpoint.Info(
+    endpointInfo
+  ) where
 
 import           Boots
 import           Boots.Endpoint.Class
@@ -35,10 +37,10 @@ endpointInfo
   => Proxy context
   -> Factory n (WebEnv env context) ()
 endpointInfo pc = do
-  app <- asksEnv (view askApp)
+  WebEnv{..} <- getEnv
   registerEndpoint "info" pc (Proxy @EndpointInfo) $ liftIO $ do
     rtsf <- getRTSFlags
-    return (go rtsf app)
+    return (go rtsf envs)
   where
     {-# INLINE go #-}
     go RTSFlags{..} AppEnv{..}=

@@ -1,11 +1,14 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Boots.Endpoint.Class where
+module Boots.Endpoint.Class(
+    registerEndpoint
+  ) where
 
 import           Boots
 import           Boots.Factory.Web
@@ -20,7 +23,7 @@ data EndpointTag
 instance HasServer api ctx
   => HasServer (EndpointTag :> api) ctx where
   type ServerT (EndpointTag :> api) m = ServerT api m
-  route _ b = pathRouter "endpoints" . (route (Proxy @api) b)
+  route _ b = pathRouter "endpoints" . route (Proxy @api) b
   hoistServerWithContext _ = hoistServerWithContext (Proxy @api)
 
 instance HasSwagger api => HasSwagger (EndpointTag :> api) where
@@ -37,7 +40,7 @@ registerEndpoint
   => Text -- ^ Endpoint name, used for path, @/endpoints/:name@.
   -> Proxy context -- ^ Context proxy.
   -> Proxy api -- ^ Api proxy.
-  -> ServerT api (App env) -- ^ Api server.
+  -> ServerT api (App (AppEnv env)) -- ^ Api server.
   -> Factory n (WebEnv env context) ()
 registerEndpoint name pc _ server = do
   WebEnv{..} <- getEnv

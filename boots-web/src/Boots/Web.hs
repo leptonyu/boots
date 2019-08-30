@@ -63,21 +63,19 @@ bootWeb
     , HasWeb context env)
   => String -- ^ Application name.
   -> Version -- ^ Application version.
-  -> Factory IO AppEnv env -- ^ Function which generates @env@ using `AppEnv`.
-  -> Factory IO AppEnv (env -> Context context) -- ^ Function which generates @context@ using @env@.
+  -> Factory IO (AppEnv ()) env -- ^ Function which generates @env@ using `AppEnv`.
+  -> Factory IO (AppEnv env) (AppEnv env -> Context context) -- ^ Function which generates @context@ using @env@.
   -> Factory IO (WebEnv env context) () -- ^ Customized `Factory`.
   -> Proxy api -- ^ Api proxy.
-  -> ServerT api (App env) -- ^ Servant api server.
+  -> ServerT api (App (AppEnv env)) -- ^ Servant api server.
   -> IO ()
-bootWeb appName ver fenv fcxt buildCustom api server = bootApp appName ver $ do
-  app   <- getEnv
+bootWeb appName ver fenv fcxt buildCustom api server = bootApp appName ver fenv $ do
   conf  <- require "application"
   ec    <- require "endpoints"
   store <- liftIO newStore
   cxt   <- fcxt
-  -- fcxt must call before env, which maybe affect env.
-  env   <- fenv
-  logInfo $ "Start Service [" <> toLogStr (name app) <> "] ..."
+  env   <- getEnv
+  logInfo $ "Start Service [" <> toLogStr (name env) <> "] ..."
   let
     c = newWebEnv env cxt conf ec store :: WebEnv env context
     pe = Proxy @env
@@ -96,16 +94,10 @@ bootWeb appName ver fenv fcxt buildCustom api server = bootApp appName ver $ do
 bootWebEnv
   :: String
   -> Version
-  -> Factory IO AppEnv ext
-  -> Factory IO (WebEnv (Env ext) '[Env ext]) ()
+  -> Factory IO (AppEnv ()) env
+  -> Factory IO (WebEnv env '[AppEnv env]) ()
   -> IO ()
 bootWebEnv name ver makeExt mid
-  = bootWeb name ver go (return (:. EmptyContext)) mid (Proxy @EmptyAPI) emptyServer
-  where
-    go = do
-      ext <- makeExt
-      -- App should get after ext, for makeExt may change AppEnv
-      app <- getEnv
-      return Env{..}
+  = bootWeb name ver makeExt (return (:. EmptyContext)) mid (Proxy @EmptyAPI) emptyServer
 
 

@@ -1,7 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeApplications    #-}
 -- |
 -- Module:      Boots.Factory.Error
 -- Copyright:   2019 Daniel YU
@@ -53,7 +52,7 @@ buildWebLogger _ _ = tryBuildByKey True "web.log.enabled" $
 
 {-# INLINE toLog #-}
 toLog :: HasLogger env => Request -> Status -> App env ()
-toLog ~req Status{..} =
+toLog req Status{..} =
   let {-# INLINE g #-}
       g (Just i) = " \"" <> toLogStr i <> "\""
       g _        = " \"\""

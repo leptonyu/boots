@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 04606539f8dbf613ef3f1b6929de01fec924fc71f1ec5e05bd9333395841f385
+-- hash: ba05ea1ea567281dedac13816e71093c10933f12738d5fbaec341d76eb239bd5
 
 name:           demo
 version:        0.2.0.1
@@ -34,5 +34,4 @@ executable demo-web
     , boots-cloud >=0.2 && <0.3
     , boots-web >=0.2 && <0.3
     , servant-server >=0.16.2 && <0.17
-    , time >=1.8.0 && <1.10
   default-language: Haskell2010
