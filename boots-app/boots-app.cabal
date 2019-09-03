@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9d9cfcfb6b50450a4ce4f1f75f0f2945422b4a478a0386a81622e9d8dc319657
+-- hash: 63d3fc4730694b81fb3859e265d6d472522edcbd9802d46bc6f2972199aa2ce4
 
 name:           boots-app
 version:        0.2.0.1
@@ -25,8 +25,8 @@ extra-source-files:
 library
   exposed-modules:
       Boots
-      Boots.CLI
   other-modules:
+      Boots.CLI
       Boots.App
       Boots.Health
       Boots.Prelude
@@ -42,7 +42,7 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.9 && <5
-    , boots >=0.2 && <0.3
+    , boots >=0.2.0.1 && <0.3
     , data-default >=0.7.1 && <0.8
     , exceptions >=0.10.2 && <0.11
     , fast-logger >=2.4.16 && <2.5

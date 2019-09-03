@@ -16,8 +16,9 @@ library:
   exposed-modules:
     - Boots
 
-    - Boots.CLI
   other-modules:
+    
+    - Boots.CLI
 
     - Boots.App
     - Boots.Health
@@ -30,7 +31,7 @@ library:
     - Boots.Factory.Salak
     - Paths_boots_app
   dependencies:
-    - boots                >= 0.2    && < 0.3
+    - boots                >= 0.2.0.1 && < 0.3
     - data-default         >= 0.7.1  && < 0.8
     - exceptions           >= 0.10.2 && < 0.11
     - fast-logger          >= 2.4.16 && < 2.5

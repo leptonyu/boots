@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5093a64bbd75ffbb5bf5f7ad599e314fd7e5a0df0004d6de8e296f15c291c8c2
+-- hash: 5215c3f55eaffc3e9d440031424b85a0c65259a827643b5b9d2defb123c3dd30
 
 name:           boots-web
 version:        0.2.0.1
@@ -46,8 +46,8 @@ library
   build-depends:
       aeson >=1.4.4 && <1.5
     , base >=4.9 && <5
-    , boots >=0.2 && <0.3
-    , boots-app >=0.2 && <0.3
+    , boots >=0.2.0.1 && <0.3
+    , boots-app >=0.2.0.1 && <0.3
     , bytestring >=0.10.8 && <0.11
     , containers >=0.6.0 && <0.7
     , ekg-core >=0.1.1 && <0.2
