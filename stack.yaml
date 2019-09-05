@@ -1,4 +1,4 @@
-resolver: nightly-2019-08-26
+resolver: nightly-2019-09-02
 
 packages:
 - boots
@@ -9,10 +9,12 @@ packages:
 - demo
 
 extra-deps:
+- git: https://github.com/kazu-yamamoto/logger.git
+  commit: fc8a7c8275c802d713355aac7a2c55454728d17b
+  subdirs:
+  - fast-logger
 - warp-3.3.0
 - http2-2.0.3
-- salak-0.3.5.3
-- salak-yaml-0.3.5.3
 # - time-1.9.3
 
 ghc-options:
