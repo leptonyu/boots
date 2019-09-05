@@ -11,7 +11,6 @@ module Boots.Random(
   , makeRD
   , makeRD0
   , forkRD
-  , hex32
   , hex64
   , nextWord64
   , splitSMGen
@@ -19,13 +18,21 @@ module Boots.Random(
 
 import           Boots.App.Internal
 import           Boots.Prelude
+import           Control.Concurrent
+    ( getNumCapabilities
+    , myThreadId
+    , threadCapability
+    )
 import           Control.Concurrent.MVar
 import           Control.Monad.Factory
+import           Data.ByteString         (ByteString)
+import           Data.ByteString.Builder (toLazyByteString, word64HexFixed)
+import           Data.ByteString.Lazy    (toStrict)
 import           Data.IORef
 import           Data.Text               (toLower, unpack)
 import           Data.Tuple
+import           Data.Vector             (generateM, (!))
 import           Foreign
-import           Numeric                 (showHex)
 import           Salak
 import           System.Random.SplitMix
 
@@ -52,10 +59,23 @@ instance HasRandom RD where
   {-# INLINE askRandom #-}
 
 -- | Create a new random value generator.
+{-# INLINE newRD' #-}
+newRD' :: RDType -> IO RD
+newRD' RDIORef = initSMGen >>= newIORef >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap.f))
+newRD' _       = initSMGen >>= makeRD
+
 {-# INLINE newRD #-}
 newRD :: RDType -> IO RD
-newRD RDIORef = initSMGen >>= newIORef >>= \ref -> return (RD $ \f -> atomicModifyIORef' ref (swap.f))
-newRD _       = initSMGen >>= makeRD
+newRD rdt = do
+  i <- getNumCapabilities
+  if i <= 1
+    then newRD' rdt
+    else do
+      v <- generateM i (const $ newRD' rdt)
+      return $ RD $ \f -> do
+        (x, _) <- myThreadId >>= threadCapability
+        unRD (v ! (x `mod` i)) f
+
 
 -- | Create random value generator with a seed.
 {-# INLINE makeRD #-}
@@ -86,14 +106,9 @@ class Monad m => MonadRandom env m | m -> env where
   nextW64   :: m Word64
 
 -- | Convert `Word64` into 64 bit hex.
-hex64 :: IsString a => Word64 -> a
-hex64 i = fromString $ let x = showHex i "" in replicate (16 - length x) '0' ++ x
+hex64 :: Word64 -> ByteString
+hex64 = toStrict . toLazyByteString . word64HexFixed
 {-# INLINE hex64 #-}
-
--- | Convert `Word64` into 32 bit hex.
-hex32 :: IsString a => Word64 -> a
-hex32 i = fromString $ let x = showHex i "" in drop 8 $ replicate (16 - length x) '0' ++ x
-{-# INLINE hex32 #-}
 
 instance (HasRandom env, MonadMask n, MonadIO n) => MonadRandom env (Factory n env) where
   nextW64 = do

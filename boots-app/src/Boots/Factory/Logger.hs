@@ -29,14 +29,10 @@ module Boots.Factory.Logger(
 import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Prelude
-import           Control.Concurrent      (forkIO)
-import           Control.Concurrent.Chan
 import           Control.Concurrent.MVar
-import           Control.Exception       (SomeException, catch, finally, mask_)
-import           Control.Monad
+import           Control.Exception       (SomeException, catch)
 import           Control.Monad.Factory
 import           Data.Int
-import           Data.IORef
 import           Data.Text               (Text, toLower, unpack)
 import           Data.Word
 import           GHC.Stack
@@ -95,11 +91,10 @@ data LogConfig = LogConfig
   , maxSize       :: !Word32         -- ^ Max logger file size.
   , rotateHistory :: !Word16         -- ^ Max number of logger files should be reserved.
   , level         :: !(IO LogLevel)    -- ^ Log level to show.
-  , asyncMode     :: !Bool
   }
 
 instance Default LogConfig where
-  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo) False
+  def = LogConfig 4096 Nothing 10485760 256 (return LevelInfo)
 
 instance MonadIO m => FromProp m LogConfig where
   fromProp = LogConfig
@@ -108,7 +103,6 @@ instance MonadIO m => FromProp m LogConfig where
     <*> "max-size"    .?: maxSize
     <*> "max-history" .?: rotateHistory
     <*> "level"       .?: level
-    <*> "async"       .?: asyncMode
   {-# INLINE fromProp #-}
 
 -- | A `Monad` which has the ability to log messages.
@@ -202,30 +196,6 @@ runLog !lf !logLvl LogEvent{..} = do
         <> llog
         <> "\n"
 
-{-# INLINE asyncLog #-}
-asyncLog
-  :: (LogStr -> IO ())
-  -> Writable LogLevel
-  -> (SomeException -> IO ())
-  -> IO ()
-  -> IO (LogEvent -> IO (), IO ())
-asyncLog lf ll lfail le = do
-  rc <- newChan -- First Channel
-  b  <- newIORef True
-  let
-    loop rr ww = do
-      xb <- readIORef b
-      when xb $ do
-        _ <- readChan rr >>= ww
-        loop rr ww
-    {-# INLINE leftc #-}
-    leftc = mask_ (getChanContents rc >>= mapM_ (runLog lf ll))
-  void $ forkIO $ loop rc (runLog lf ll)
-  return
-    ( writeChan rc
-    , (modifyIORef' b (const False) >> catch leftc lfail) `finally` le
-    )
-
 -- | Create a new `LogFunc`.
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
@@ -242,10 +212,8 @@ newLogger name LogConfig{..} = do
     lfail (_::SomeException) = modifyMVar_ logFailM (return . (+1))
     {-# INLINE lname #-}
     lname = " [" <> toLogStr name <> "] "
-  (execLog,logend) <- if asyncMode
-    then asyncLog logf logLvl lfail close
-    else return (\e -> runLog logf logLvl e `catch` lfail, close)
-  let
+    execLog e = runLog logf logLvl e `catch` lfail
+    logend = close
     {-# INLINE logfunc #-}
     logfunc lloc llevel llog = execLog LogEvent {..}
   return LogFunc{..}

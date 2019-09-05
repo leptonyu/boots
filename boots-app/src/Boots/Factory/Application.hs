@@ -19,9 +19,11 @@ import           Boots.Prelude
 import           Boots.Random
 import           Control.Concurrent    (setNumCapabilities)
 import           Control.Monad.Factory
+import qualified Data.ByteString       as B
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text             (Text)
+import           Data.Text.Encoding
 import           Data.Version          (Version)
 import           Salak
 import           Salak.Yaml
@@ -73,7 +75,7 @@ instance FromProp m AppConfig where
   fromProp = AppConfig
     <$> "name"
     <*> "num-capabilities"
-    <*> "random.type" .?= RDMVar
+    <*> "random.type" .?= RDIORef
 
 -- | Factory used to build `AppEnv`.
 buildApp
@@ -99,7 +101,7 @@ buildApp confName version mcli ext = do
     let name = fromMaybe (fromString confName) appName
     -- Generate instanceid
     randSeed   <- liftIO $ newRD randomType
-    instanceId <- liftIO $ hex32 <$> unRD randSeed nextWord64
+    instanceId <- liftIO $ decodeUtf8 . B.take 8 . hex64 <$> unRD randSeed nextWord64
     -- Initialize logger
     logFunc    <- buildLogger (name <> "," <> instanceId)
     -- Consume logs from salak
