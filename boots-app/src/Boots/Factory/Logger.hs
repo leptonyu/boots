@@ -29,11 +29,11 @@ module Boots.Factory.Logger(
 import           Boots.App.Internal
 import           Boots.Factory.Salak
 import           Boots.Prelude
-import           Control.Concurrent.MVar
-import           Control.Exception       (SomeException, catch)
+import           Control.Exception     (SomeException, catch)
 import           Control.Monad.Factory
 import           Data.Int
-import           Data.Text               (Text, toLower, unpack)
+import           Data.IORef
+import           Data.Text             (Text, toLower, unpack)
 import           Data.Word
 import           GHC.Stack
 import           Salak
@@ -199,23 +199,21 @@ runLog !lf !logLvl LogEvent{..} = do
 -- | Create a new `LogFunc`.
 newLogger :: Text -> LogConfig -> IO LogFunc
 newLogger name LogConfig{..} = do
-  (logf,close)  <- newFastLogger $ case file of
+  (logf,logend)  <- newFastLogger $ case file of
         Just f -> LogFile (FileLogSpec f (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
         _      -> LogStdout $ fromIntegral bufferSize
   ltime    <- newTimeCache "%Y-%m-%d %T"
   logLvl   <- toWritable level
-  logFailM <- newMVar 0
+  logFailM <- newIORef 0
   let
     {-# INLINE logFail #-}
-    logFail = readMVar logFailM
+    logFail = readIORef logFailM
     {-# INLINE lfail #-}
-    lfail (_::SomeException) = modifyMVar_ logFailM (return . (+1))
+    lfail (_::SomeException) = atomicModifyIORef' logFailM (\a -> (a+1,()))
     {-# INLINE lname #-}
     lname = " [" <> toLogStr name <> "] "
-    execLog e = runLog logf logLvl e `catch` lfail
-    logend = close
     {-# INLINE logfunc #-}
-    logfunc lloc llevel llog = execLog LogEvent {..}
+    logfunc lloc llevel llog = runLog logf logLvl LogEvent {..} `catch` lfail
   return LogFunc{..}
 
 -- | Add additional trace info into log.
