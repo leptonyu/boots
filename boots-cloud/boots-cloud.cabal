@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d6226149edbd3ba149c31e8ed318e2de39e0aac272d47a78e9188d2978bb321d
+-- hash: e2dbedff4805d18f8303ccf590f0a0c94d94e9f93ac37961b42888ad57c2fe4b
 
 name:           boots-cloud
-version:        0.2.0.1
+version:        0.2.1
 synopsis:       Factory for quickly building a microservice
 description:    A quick out-of-box factory using to build microservices with many useful builtin components based on [boots-web](https://hackage.haskell.org/package/boots-web).
 category:       Library, Application, Servant, Swagger, Web, Microservice, Consul

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5215c3f55eaffc3e9d440031424b85a0c65259a827643b5b9d2defb123c3dd30
+-- hash: 62070fa93c20a70a7bf29d698a0953034df2a00a45cdd43bb72aae5a985742c5
 
 name:           boots-web
-version:        0.2.0.1
+version:        0.2.1
 synopsis:       Factory for quickly building a web application
 description:    A quick out-of-box factory using to build web application with many useful builtin components based on [boots](https://hackage.haskell.org/package/boots) and [servant](https://hackage.haskell.org/package/servant).
 category:       Library, Application, Servant, Swagger, Web

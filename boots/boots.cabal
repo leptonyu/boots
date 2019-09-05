@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3146016e5871285957b16d4cdcae41796bb4ab523adf5a2c6002c2edcdbc9024
+-- hash: 3177a432fa11aef4008a106103a1c1517211b30fa589497d096f886e6e4bc036
 
 name:           boots
-version:        0.2.0.1
+version:        0.2.1
 synopsis:       IoC Monad in Haskell
 description:    Monad used to encapsulate components, similiar to an IoC container.
 category:       Library, Application, Monad, Factory, IoC

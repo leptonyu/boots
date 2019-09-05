@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ba05ea1ea567281dedac13816e71093c10933f12738d5fbaec341d76eb239bd5
+-- hash: 1e9125bb487e3d27cd2a9a2fd0f75abdb547ad4e52ab559f5170b9f4534b4650
 
 name:           demo
-version:        0.2.0.1
+version:        0.2.1
 synopsis:       Web factories.
 description:    Provide web factories base on boots.
 homepage:       https://github.com/leptonyu/boots#readme
