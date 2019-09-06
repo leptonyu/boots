@@ -3,6 +3,8 @@
 
 language: haskell
 sudo: enabled
+services:
+  - docker
 
 cache:
   directories:
@@ -34,3 +36,4 @@ script:
  - cabal v2-update
  - cabal v2-build all --project-file=$TARGET
  - cabal v2-test all --enable-test --project-file=$TARGET
+ - if ghc --version | grep -q 8.8.1; then bash script/deploy.sh; fi
