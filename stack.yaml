@@ -1,18 +1,12 @@
-resolver: nightly-2019-09-02
+resolver: lts-16.3 
 
 packages:
 - boots
 - boots-app
-- boots-cloud
-- boots-web
+  #- boots-cloud
+  #- boots-web
 
-- demo
-
-extra-deps:
-- warp-3.3.0
-- http2-2.0.3
-- fast-logger-2.4.17
-# - time-1.9.3
+  #- demo
 
 ghc-options:
   "$locals": -ddump-to-file -ddump-hi
