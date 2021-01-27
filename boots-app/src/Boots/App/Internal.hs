@@ -42,10 +42,6 @@ withAppT = unsafeCoerce withReaderT
 {-# INLINE withAppT #-}
 
 instance MonadUnliftIO m => MonadUnliftIO (AppT env m) where
-  {-# INLINE askUnliftIO #-}
-  askUnliftIO = AppT $ ReaderT $ \r ->
-                withUnliftIO $ \u ->
-                return (UnliftIO (unliftIO u . runAppT r))
   {-# INLINE withRunInIO #-}
   withRunInIO inner =
     AppT $ ReaderT $ \r ->
