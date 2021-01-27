@@ -32,4 +32,3 @@ jobs:
        cabal v2-update
        cabal v2-build all
        cabal v2-test --enable-test all
-       cabal v2-bench --enable-bench all
